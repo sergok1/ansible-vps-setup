@@ -9,7 +9,7 @@ fail2ban_ignoreip:
 # Настройки jail по умолчанию
 fail2ban_maxretry: 5             # Макс. неудачных попыток до бана
 fail2ban_findtime: 600           # Период отслеживания (10 минут)
-fail2ban_bantime: 86400          # Длительность бана (24 часа)
+fail2ban_bantime: -1             # Постоянный бан
 
 # Email уведомления (опционально)
 fail2ban_destemail: "root@localhost"
@@ -19,6 +19,6 @@ fail2ban_action: "%(action_)s"
 
 # Настройки SSH jail
 fail2ban_ssh_enabled: true
-fail2ban_ssh_maxretry: 3         # Макс. попыток для SSH
+fail2ban_ssh_maxretry: 5         # Макс. попыток для SSH
 fail2ban_ssh_findtime: 120       # Период (2 минуты)
-fail2ban_ssh_bantime: 604800     # Бан на 7 дней
+fail2ban_ssh_bantime: -1         # Постоянный бан

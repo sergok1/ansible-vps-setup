@@ -1,6 +1,17 @@
 ---
 # Главный playbook для настройки безопасности VPS
-# Использование: ansible-playbook site.yml
+#
+# Использование:
+#   ansible-playbook site.yml                      # Запуск всех ролей
+#   ansible-playbook site.yml --check --diff       # Тестовый запуск (покажет изменения без применения)
+#
+# Запуск отдельных ролей:
+#   ansible-playbook site.yml --tags common        # Только обновление системы
+#   ansible-playbook site.yml --tags users         # Только создание пользователя
+#   ansible-playbook site.yml --tags ssh           # Только настройка SSH
+#   ansible-playbook site.yml --tags ufw           # Только файрвол
+#   ansible-playbook site.yml --tags fail2ban      # Только fail2ban
+#   ansible-playbook site.yml --tags security      # SSH + UFW + fail2ban
 
 - name: Начальная настройка безопасности VPS
   hosts: vps

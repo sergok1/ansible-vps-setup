@@ -77,8 +77,8 @@ fail2ban_ignoreip:
 # Проверка подключения
 ansible all -m ping
 
-# Тестовый запуск (без изменений)
-ansible-playbook site.yml --check
+# Тестовый запуск — покажет ЧТО изменится, но НЕ применит изменения
+ansible-playbook site.yml --check --diff
 
 # Выполнение
 ansible-playbook site.yml
