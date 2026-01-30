@@ -1,0 +1,46 @@
+---
+# Задачи настройки безопасности SSH
+
+- name: Резервное копирование оригинального sshd_config
+  ansible.builtin.copy:
+    src: /etc/ssh/sshd_config
+    dest: /etc/ssh/sshd_config.backup
+    remote_src: true
+    force: false
+    mode: '0600'
+
+- name: Настройка параметров SSH демона
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+    state: present
+    validate: 'sshd -t -f %s'
+  loop:
+    - { regexp: '^#?Port\s', line: 'Port {{ ssh_port }}' }
+    - { regexp: '^#?PermitRootLogin\s', line: 'PermitRootLogin {{ ssh_permit_root_login }}' }
+    - { regexp: '^#?PubkeyAuthentication\s', line: 'PubkeyAuthentication {{ ssh_pubkey_authentication }}' }
+    - { regexp: '^#?PasswordAuthentication\s', line: 'PasswordAuthentication {{ ssh_password_authentication }}' }
+    - { regexp: '^#?MaxAuthTries\s', line: 'MaxAuthTries {{ ssh_max_auth_tries }}' }
+    - { regexp: '^#?ClientAliveInterval\s', line: 'ClientAliveInterval {{ ssh_client_alive_interval }}' }
+    - { regexp: '^#?ClientAliveCountMax\s', line: 'ClientAliveCountMax {{ ssh_client_alive_count_max }}' }
+    - { regexp: '^#?X11Forwarding\s', line: 'X11Forwarding no' }
+    - { regexp: '^#?AllowAgentForwarding\s', line: 'AllowAgentForwarding no' }
+    - { regexp: '^#?PermitEmptyPasswords\s', line: 'PermitEmptyPasswords no' }
+  notify: Перезапуск sshd
+
+- name: Ограничение SSH доступа определёнными пользователями
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?AllowUsers\s'
+    line: "AllowUsers {{ ssh_allowed_users | join(' ') }}"
+    state: present
+    validate: 'sshd -t -f %s'
+  when: ssh_allowed_users is defined and ssh_allowed_users | length > 0
+  notify: Перезапуск sshd
+
+- name: Включение и запуск службы SSH
+  ansible.builtin.service:
+    name: "{{ ssh_service_name }}"
+    state: started
+    enabled: true

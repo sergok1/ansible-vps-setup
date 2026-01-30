@@ -1,0 +1,16 @@
+---
+# Переменные по умолчанию для роли common
+
+common_packages:
+  - curl
+  - wget
+  - vim
+  - htop
+  - git
+  - unzip
+
+common_upgrade_packages: false  # Обновлять ли все пакеты
+common_set_hostname: false      # Устанавливать ли hostname
+
+timezone: "UTC"
+locale: "en_US.UTF-8"

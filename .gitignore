@@ -1,0 +1,71 @@
+# Файлы Ansible
+*.retry
+.ansible_cache/
+
+# Inventory файлы с реальными хостами (используйте .example как шаблон)
+inventories/hosts.ini
+inventories/*.ini
+!inventories/*.example
+
+# Group vars с секретами (используйте .example как шаблон)
+group_vars/all.yml
+group_vars/*.yml
+!group_vars/*.example
+
+# Host vars (могут содержать конфиденциальные данные)
+host_vars/
+
+# Файл пароля vault
+.vault_pass
+.vault_password
+vault_pass.txt
+
+# Зашифрованные vault файлы
+*.vault
+*.vault.yml
+
+# SSH ключи
+*.pem
+*.key
+id_*
+!id_*.pub
+
+# Лог файлы
+*.log
+logs/
+
+# Временные файлы
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# Системные файлы ОС
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+
+# Файлы IDE и редакторов
+.idea/
+.vscode/
+*.sublime-*
+*.code-workspace
+
+# Виртуальные окружения Python
+venv/
+.venv/
+env/
+.env
+
+# Тестирование Molecule
+.molecule/
+molecule/**/molecule/
+
+# Бэкап файлы созданные ролями
+*.backup
+*.bak

@@ -1,0 +1,78 @@
+---
+# Пример файла переменных
+# Скопируйте в all.yml и настройте под своё окружение
+# cp all.yml.example all.yml
+
+# ==============================================================================
+# Настройка пользователя
+# ==============================================================================
+admin_user: "your_username"              # Имя пользователя для админа
+admin_groups:
+  - sudo
+  - adm
+
+# Путь к вашему SSH публичному ключу (на локальной машине)
+ssh_public_key_path: "~/.ssh/id_ed25519.pub"
+
+# ==============================================================================
+# Настройка SSH
+# ==============================================================================
+ssh_port: 22                             # Кастомный SSH порт (измените с 22)
+ssh_permit_root_login: "no"
+ssh_password_authentication: "no"
+ssh_pubkey_authentication: "yes"
+ssh_max_auth_tries: 3
+ssh_client_alive_interval: 300
+ssh_client_alive_count_max: 2
+
+# ==============================================================================
+# Настройка файрвола UFW
+# ==============================================================================
+ufw_default_incoming_policy: "deny"
+ufw_default_outgoing_policy: "allow"
+
+# Порты для открытия (добавьте нужные порты)
+# Формат: { port: "ПОРТ", proto: "tcp|udp", comment: "описание" }
+ufw_allowed_ports:
+  - { port: "{{ ssh_port }}", proto: "tcp", comment: "SSH" }
+  # - { port: "80", proto: "tcp", comment: "HTTP" }
+  # - { port: "443", proto: "tcp", comment: "HTTPS" }
+
+# Rate limiting для SSH (защита от brute force)
+ufw_rate_limit_ssh: true
+
+# ==============================================================================
+# Настройка Fail2ban
+# ==============================================================================
+fail2ban_ignoreip:
+  - "127.0.0.1/8"
+  - "::1"
+  # Добавьте ваши доверенные IP:
+  # - "ВАШ_ДОМАШНИЙ_IP"
+  # - "ВАШ_ОФИСНЫЙ_IP"
+
+fail2ban_maxretry: 5
+fail2ban_findtime: 600                   # 10 минут
+fail2ban_bantime: 86400                  # 24 часа (используйте -1 для постоянного)
+
+# Настройки SSH jail
+fail2ban_ssh_enabled: true
+fail2ban_ssh_maxretry: 3
+fail2ban_ssh_findtime: 120               # 2 минуты
+fail2ban_ssh_bantime: 604800             # 7 дней
+
+# ==============================================================================
+# Системные настройки
+# ==============================================================================
+timezone: "UTC"
+locale: "en_US.UTF-8"
+
+# Пакеты для установки
+common_packages:
+  - curl
+  - wget
+  - vim
+  - htop
+  - git
+  - unzip
+  - net-tools

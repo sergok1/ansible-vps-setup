@@ -1,0 +1,60 @@
+---
+# Задачи настройки файрвола UFW
+
+- name: Установка UFW
+  ansible.builtin.apt:
+    name: ufw
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Сброс UFW к настройкам по умолчанию
+  community.general.ufw:
+    state: reset
+  when: ufw_reset | default(false)
+
+- name: Установка политики входящих подключений
+  community.general.ufw:
+    direction: incoming
+    policy: "{{ ufw_default_incoming_policy }}"
+
+- name: Установка политики исходящих подключений
+  community.general.ufw:
+    direction: outgoing
+    policy: "{{ ufw_default_outgoing_policy }}"
+
+- name: Разрешение настроенных портов
+  community.general.ufw:
+    rule: allow
+    port: "{{ item.port | string }}"
+    proto: "{{ item.proto }}"
+    comment: "{{ item.comment | default(omit) }}"
+  loop: "{{ ufw_allowed_ports }}"
+  when: ufw_allowed_ports is defined
+
+- name: Разрешение доступа для определённых IP
+  community.general.ufw:
+    rule: allow
+    src: "{{ item.src }}"
+    port: "{{ item.port | string | default(omit) }}"
+    proto: "{{ item.proto | default(omit) }}"
+    comment: "{{ item.comment | default(omit) }}"
+  loop: "{{ ufw_allowed_ips }}"
+  when: ufw_allowed_ips is defined
+
+- name: Rate limiting для SSH порта
+  community.general.ufw:
+    rule: limit
+    port: "{{ ssh_port | string }}"
+    proto: tcp
+    comment: "Rate limit SSH"
+  when: ufw_rate_limit_ssh | default(true)
+
+- name: Включение UFW
+  community.general.ufw:
+    state: enabled
+
+- name: Включение логирования UFW
+  community.general.ufw:
+    logging: "{{ ufw_logging_level }}"
+  when: ufw_logging_level is defined

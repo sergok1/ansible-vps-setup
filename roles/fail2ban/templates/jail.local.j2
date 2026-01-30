@@ -1,0 +1,41 @@
+# Конфигурация Fail2ban
+# Управляется Ansible - НЕ РЕДАКТИРОВАТЬ ВРУЧНУЮ
+
+[DEFAULT]
+# IP которые игнорировать (никогда не банить)
+ignoreip = {{ fail2ban_ignoreip | join(' ') }}
+
+# Настройки бана по умолчанию
+maxretry = {{ fail2ban_maxretry }}
+findtime = {{ fail2ban_findtime }}
+bantime = {{ fail2ban_bantime }}
+
+# Настройки email
+destemail = {{ fail2ban_destemail }}
+sender = {{ fail2ban_sender }}
+mta = {{ fail2ban_mta }}
+
+# Действие по умолчанию
+action = {{ fail2ban_action }}
+
+# Бэкенд для мониторинга логов
+backend = auto
+
+[sshd]
+enabled = {{ fail2ban_ssh_enabled | lower }}
+port = {{ ssh_port }}
+filter = sshd
+logpath = /var/log/auth.log
+maxretry = {{ fail2ban_ssh_maxretry }}
+findtime = {{ fail2ban_ssh_findtime }}
+bantime = {{ fail2ban_ssh_bantime }}
+
+{% if fail2ban_custom_jails is defined %}
+{% for jail in fail2ban_custom_jails %}
+[{{ jail.name }}]
+{% for key, value in jail.items() if key != 'name' %}
+{{ key }} = {{ value }}
+{% endfor %}
+
+{% endfor %}
+{% endif %}

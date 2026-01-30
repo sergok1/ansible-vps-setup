@@ -1,0 +1,17 @@
+---
+# Переменные по умолчанию для роли SSH
+
+ssh_port: 22
+ssh_permit_root_login: "no"              # Запретить вход под root
+ssh_password_authentication: "no"        # Запретить парольную аутентификацию
+ssh_pubkey_authentication: "yes"         # Разрешить аутентификацию по ключам
+ssh_max_auth_tries: 3                    # Макс. попыток аутентификации
+ssh_client_alive_interval: 300           # Интервал проверки активности (сек)
+ssh_client_alive_count_max: 2            # Макс. пропущенных проверок
+
+# Имя службы (может отличаться в разных дистрибутивах)
+ssh_service_name: ssh
+
+# Опционально: ограничить SSH доступ определёнными пользователями
+# ssh_allowed_users:
+#   - admin_user

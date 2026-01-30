@@ -1,0 +1,35 @@
+---
+# Общие системные задачи
+
+- name: Обновление кэша apt
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+  when: ansible_os_family == "Debian"
+
+- name: Обновление всех пакетов
+  ansible.builtin.apt:
+    upgrade: safe
+  when: ansible_os_family == "Debian" and common_upgrade_packages | default(false)
+
+- name: Установка базовых пакетов
+  ansible.builtin.apt:
+    name: "{{ common_packages }}"
+    state: present
+  when: common_packages is defined and common_packages | length > 0
+
+- name: Установка часового пояса
+  community.general.timezone:
+    name: "{{ timezone }}"
+  when: timezone is defined
+
+- name: Проверка наличия локали
+  community.general.locale_gen:
+    name: "{{ locale }}"
+    state: present
+  when: locale is defined
+
+- name: Установка hostname
+  ansible.builtin.hostname:
+    name: "{{ inventory_hostname_short }}"
+  when: common_set_hostname | default(false)

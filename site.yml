@@ -1,0 +1,47 @@
+---
+# Главный playbook для настройки безопасности VPS
+# Использование: ansible-playbook site.yml
+
+- name: Начальная настройка безопасности VPS
+  hosts: vps
+  become: true
+  gather_facts: true
+
+  pre_tasks:
+    - name: Проверка обязательных переменных
+      ansible.builtin.assert:
+        that:
+          - admin_user is defined
+          - ssh_port is defined
+        fail_msg: "Обязательные переменные не определены. Проверьте group_vars/all.yml"
+
+  roles:
+    - role: common
+      tags: [common, base]
+
+    - role: users
+      tags: [users]
+
+    - role: ssh
+      tags: [ssh, security]
+
+    - role: ufw
+      tags: [ufw, firewall, security]
+
+    - role: fail2ban
+      tags: [fail2ban, security]
+
+  post_tasks:
+    - name: Вывод информации о подключении
+      ansible.builtin.debug:
+        msg: |
+          ========================================
+          Настройка VPS завершена!
+          ========================================
+          SSH порт: {{ ssh_port }}
+          Пользователь: {{ admin_user }}
+          
+          Для подключения:
+          ssh -p {{ ssh_port }} {{ admin_user }}@{{ inventory_hostname }}
+          ========================================
+      tags: [always]

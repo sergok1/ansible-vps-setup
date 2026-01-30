@@ -1,0 +1,40 @@
+---
+# Задачи управления пользователями
+
+- name: Проверка существования групп админа
+  ansible.builtin.group:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ admin_groups }}"
+
+- name: Создание пользователя админа
+  ansible.builtin.user:
+    name: "{{ admin_user }}"
+    groups: "{{ admin_groups | join(',') }}"
+    shell: /bin/bash
+    create_home: true
+    state: present
+
+- name: Создание директории .ssh для админа
+  ansible.builtin.file:
+    path: "/home/{{ admin_user }}/.ssh"
+    state: directory
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: '0700'
+
+- name: Добавление SSH публичного ключа для админа
+  ansible.posix.authorized_key:
+    user: "{{ admin_user }}"
+    state: present
+    key: "{{ lookup('file', ssh_public_key_path) }}"
+  when: ssh_public_key_path is defined
+
+- name: Настройка sudo без пароля для админа
+  ansible.builtin.lineinfile:
+    path: /etc/sudoers.d/{{ admin_user }}
+    line: "{{ admin_user }} ALL=(ALL) NOPASSWD:ALL"
+    create: true
+    mode: '0440'
+    validate: 'visudo -cf %s'
+  when: admin_passwordless_sudo | default(true)

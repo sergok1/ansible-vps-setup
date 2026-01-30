@@ -1,0 +1,25 @@
+---
+# Переменные по умолчанию для роли UFW
+
+ufw_default_incoming_policy: "deny"      # Политика входящих: запретить всё
+ufw_default_outgoing_policy: "allow"     # Политика исходящих: разрешить всё
+
+ufw_reset: false                         # Сбросить UFW перед настройкой
+
+# Rate limiting для SSH (защита от brute force)
+ufw_rate_limit_ssh: true
+
+# Уровень логирования: off, low, medium, high, full
+ufw_logging_level: "low"
+
+# Разрешённые порты по умолчанию (SSH добавляется автоматически)
+# Определите в group_vars/all.yml:
+# ufw_allowed_ports:
+#   - { port: "22", proto: "tcp", comment: "SSH" }
+#   - { port: "80", proto: "tcp", comment: "HTTP" }
+#   - { port: "443", proto: "tcp", comment: "HTTPS" }
+
+# Разрешить полный доступ для определённых IP
+# ufw_allowed_ips:
+#   - { src: "192.168.1.100", comment: "IP офиса" }
+#   - { src: "10.0.0.0/8", port: "22", proto: "tcp", comment: "Внутренний SSH" }

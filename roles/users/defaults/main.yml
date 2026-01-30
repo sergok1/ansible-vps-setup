@@ -1,0 +1,10 @@
+---
+# Переменные по умолчанию для роли users
+
+admin_groups:
+  - sudo
+  - adm
+
+admin_passwordless_sudo: true  # Разрешить sudo без пароля
+
+# ssh_public_key_path должен быть определён в group_vars/all.yml

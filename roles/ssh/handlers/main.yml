@@ -1,0 +1,7 @@
+---
+# Обработчики SSH
+
+- name: Перезапуск sshd
+  ansible.builtin.service:
+    name: "{{ ssh_service_name }}"
+    state: restarted
