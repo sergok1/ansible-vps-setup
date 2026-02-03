@@ -4,6 +4,7 @@
 # Использование:
 #   ansible-playbook site.yml                      # Запуск всех ролей
 #   ansible-playbook site.yml --check --diff       # Тестовый запуск (покажет изменения без применения)
+#   ansible-playbook site.yml --ask-vault-pass     # С vault для секретов
 #
 # Запуск отдельных ролей:
 #   ansible-playbook site.yml --tags common        # Только обновление системы
@@ -12,6 +13,11 @@
 #   ansible-playbook site.yml --tags ufw           # Только файрвол
 #   ansible-playbook site.yml --tags fail2ban      # Только fail2ban
 #   ansible-playbook site.yml --tags security      # SSH + UFW + fail2ban
+#
+# Уведомления:
+#   ansible-playbook site.yml --tags msmtp         # Только настройка почты
+#   ansible-playbook site.yml --tags login_notify  # Только PAM уведомления о входе
+#   ansible-playbook site.yml --tags notifications # msmtp + login_notify
 
 - name: Начальная настройка безопасности VPS
   hosts: vps
@@ -27,12 +33,14 @@
         fail_msg: "Обязательные переменные не определены. Проверьте group_vars/all.yml"
 
   roles:
+    # === Базовая настройка ===
     - role: common
       tags: [common, base]
 
     - role: users
       tags: [users]
 
+    # === Безопасность ===
     - role: ssh
       tags: [ssh, security]
 
@@ -41,6 +49,15 @@
 
     - role: fail2ban
       tags: [fail2ban, security]
+
+    # === Уведомления (опционально) ===
+    - role: msmtp
+      tags: [msmtp, notifications, never]
+      when: smtp_email is defined and smtp_password is defined
+
+    - role: login_notify
+      tags: [login_notify, notifications, never]
+      when: notify_email is defined and server_name is defined
 
   post_tasks:
     - name: Вывод информации о подключении

@@ -1,0 +1,23 @@
+---
+# Переменные по умолчанию для роли login_notify
+
+# Email для уведомлений (определите в vault или all.yml)
+# notify_email: "{{ vault_notify_email }}"
+
+# Имя сервера в письмах
+# server_name: "MY-VPS"
+
+# IP сервера (автоматически определяется, но можно указать вручную)
+# server_ip: "1.2.3.4"
+
+# Установить GeoIP для определения страны
+login_notify_geoip: true
+
+# Пропускать уведомления для cron
+login_notify_skip_cron: true
+
+# Пропускать уведомления для определённых пользователей
+login_notify_skip_users: []
+# login_notify_skip_users:
+#   - backup
+#   - monitoring

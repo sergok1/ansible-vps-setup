@@ -1,0 +1,45 @@
+---
+# Установка и настройка msmtp для отправки почты
+
+- name: Установка msmtp и зависимостей
+  ansible.builtin.apt:
+    name:
+      - msmtp
+      - msmtp-mta
+      - bsd-mailx
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Создание конфигурации msmtp
+  ansible.builtin.template:
+    src: msmtprc.j2
+    dest: /etc/msmtprc
+    owner: root
+    group: root
+    mode: '0600'
+  notify: Проверка конфигурации msmtp
+
+- name: Создание лог-файла msmtp
+  ansible.builtin.file:
+    path: /var/log/msmtp.log
+    state: touch
+    owner: root
+    group: root
+    mode: '0666'
+    modification_time: preserve
+    access_time: preserve
+
+- name: Создание симлинка sendmail -> msmtp
+  ansible.builtin.file:
+    src: /usr/bin/msmtp
+    dest: /usr/sbin/sendmail
+    state: link
+    force: true
+
+- name: Тестовая отправка письма
+  ansible.builtin.shell: |
+    echo "Тестовое письмо от msmtp на сервере {{ inventory_hostname }}" | mailx -s "[{{ server_name }}] msmtp настроен успешно" {{ notify_email }}
+  when: msmtp_send_test_email | default(true)
+  changed_when: false
+  ignore_errors: true

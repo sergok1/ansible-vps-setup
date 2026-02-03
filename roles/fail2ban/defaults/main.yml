@@ -11,11 +11,27 @@ fail2ban_maxretry: 5             # Макс. неудачных попыток �
 fail2ban_findtime: 600           # Период отслеживания (10 минут)
 fail2ban_bantime: -1             # Постоянный бан
 
-# Email уведомления (опционально)
+# === Email уведомления ===
+# Включить отправку уведомлений о банах
+fail2ban_email_enabled: false
+
+# Email для уведомлений (используйте notify_email из vault)
+# fail2ban_destemail: "{{ notify_email }}"
 fail2ban_destemail: "root@localhost"
+
+# Email отправителя
+# fail2ban_sender: "{{ smtp_email }}"
 fail2ban_sender: "root@localhost"
+
+# MTA (mail transfer agent)
 fail2ban_mta: "sendmail"
+
+# Действие при бане:
+# action_       = только бан
+# action_mw     = бан + письмо с whois
+# action_mwl    = бан + письмо с whois и логами
 fail2ban_action: "%(action_)s"
+fail2ban_action_with_email: "%(action_mwl)s"
 
 # Настройки SSH jail
 fail2ban_ssh_enabled: true

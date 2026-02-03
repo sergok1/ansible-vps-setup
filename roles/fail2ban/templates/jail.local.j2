@@ -16,7 +16,12 @@ sender = {{ fail2ban_sender }}
 mta = {{ fail2ban_mta }}
 
 # Действие по умолчанию
+{% if fail2ban_email_enabled %}
+# Email уведомления включены
+action = {{ fail2ban_action_with_email }}
+{% else %}
 action = {{ fail2ban_action }}
+{% endif %}
 
 # Бэкенд для мониторинга логов
 backend = auto
@@ -29,6 +34,9 @@ logpath = /var/log/auth.log
 maxretry = {{ fail2ban_ssh_maxretry }}
 findtime = {{ fail2ban_ssh_findtime }}
 bantime = {{ fail2ban_ssh_bantime }}
+{% if fail2ban_email_enabled %}
+action = {{ fail2ban_action_with_email }}
+{% endif %}
 
 {% if fail2ban_custom_jails is defined %}
 {% for jail in fail2ban_custom_jails %}

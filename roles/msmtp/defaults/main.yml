@@ -1,0 +1,27 @@
+---
+# Переменные по умолчанию для роли msmtp
+
+# SMTP сервер (Gmail по умолчанию)
+smtp_host: "smtp.gmail.com"
+smtp_port: 587
+
+# Учётные данные (ОБЯЗАТЕЛЬНО определите в vault!)
+# smtp_email: "{{ vault_smtp_email }}"
+# smtp_password: "{{ vault_smtp_password }}"
+
+# Email для уведомлений
+# notify_email: "{{ vault_notify_email }}"
+
+# Имя аккаунта в msmtp
+smtp_account_name: "gmail"
+
+# TLS настройки
+smtp_tls: true
+smtp_tls_starttls: true
+smtp_tls_trust_file: "/etc/ssl/certs/ca-certificates.crt"
+
+# Логирование
+msmtp_logfile: "/var/log/msmtp.log"
+
+# Отправить тестовое письмо после настройки
+msmtp_send_test_email: true

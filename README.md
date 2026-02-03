@@ -1,13 +1,15 @@
 # Ansible VPS Setup
 
-Ansible playbook для начальной настройки безопасности VPS. Автоматизирует создание пользователя, настройку SSH, конфигурацию файрвола UFW и защиту fail2ban.
+Ansible playbook для начальной настройки безопасности VPS. Автоматизирует создание пользователя, настройку SSH, конфигурацию файрвола UFW, защиту fail2ban и настройку уведомлений.
 
 ## Возможности
 
 - **Управление пользователями**: Создание админа с sudo и SSH-ключами
 - **Защита SSH**: Кастомный порт, отключение root-логина и парольной аутентификации
 - **Файрвол UFW**: Настраиваемые правила с rate limiting для SSH
-- **Fail2ban**: Защита от brute force атак
+- **Fail2ban**: Защита от brute force атак с опциональными email-уведомлениями
+- **msmtp**: Настройка отправки почты через SMTP (Gmail и др.)
+- **Login Notify**: Уведомления о любом входе в систему через PAM
 
 ## Требования
 
@@ -26,7 +28,7 @@ ansible-galaxy collection install community.general ansible.posix
 ### 1. Клонирование и настройка
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/ansible-vps-setup.git
+git clone git@github.com:sergok1/ansible-vps-setup.git
 cd ansible-vps-setup
 
 # Копируем примеры файлов
@@ -40,9 +42,9 @@ cp group_vars/all.yml.example group_vars/all.yml
 
 ```ini
 [vps]
-server1 ansible_host=192.168.1.100
-server2 ansible_host=192.168.1.101
-server3 ansible_host=10.0.0.50
+# ALIAS — произвольное имя для хоста (отображается в выводе Ansible)
+myserver ansible_host=192.168.1.100
+web-server ansible_host=192.168.1.101
 
 [vps:vars]
 ansible_user=root
@@ -65,7 +67,7 @@ ufw_allowed_ports:
   - { port: "80", proto: "tcp", comment: "HTTP" }
   - { port: "443", proto: "tcp", comment: "HTTPS" }
 
-# Доверенные IP для fail2ban
+# Доверенные IP для fail2ban (не попадут в бан)
 fail2ban_ignoreip:
   - "127.0.0.1/8"
   - "ВАШ_ДОМАШНИЙ_IP"
@@ -82,6 +84,59 @@ ansible-playbook site.yml --check --diff
 
 # Выполнение
 ansible-playbook site.yml
+
+# С sudo паролем
+ansible-playbook site.yml -K
+```
+
+## Настройка уведомлений
+
+Роли уведомлений (`msmtp`, `login_notify`) по умолчанию **не запускаются**. Для их включения нужно:
+
+### 1. Создать vault с секретами
+
+```bash
+ansible-vault create group_vars/vault.yml
+```
+
+Добавьте:
+```yaml
+vault_smtp_email: "your-email@gmail.com"
+vault_smtp_password: "xxxx-xxxx-xxxx-xxxx"  # App Password для Gmail
+vault_notify_email: "alerts@gmail.com"
+```
+
+### 2. Настроить переменные в all.yml
+
+```yaml
+# Подключение секретов из vault
+smtp_email: "{{ vault_smtp_email }}"
+smtp_password: "{{ vault_smtp_password }}"
+notify_email: "{{ vault_notify_email }}"
+
+# Имя сервера в уведомлениях
+server_name: "MY-VPS"
+
+# Включить email уведомления fail2ban
+fail2ban_email_enabled: true
+fail2ban_destemail: "{{ notify_email }}"
+fail2ban_sender: "{{ smtp_email }}"
+```
+
+### 3. Запустить роли уведомлений
+
+```bash
+# Только msmtp
+ansible-playbook site.yml --tags msmtp --ask-vault-pass -K
+
+# Только уведомления о входе
+ansible-playbook site.yml --tags login_notify --ask-vault-pass -K
+
+# Обе роли
+ansible-playbook site.yml --tags notifications --ask-vault-pass -K
+
+# Всё вместе (безопасность + уведомления)
+ansible-playbook site.yml --tags "security,notifications" --ask-vault-pass -K
 ```
 
 ## Примеры использования
@@ -89,67 +144,45 @@ ansible-playbook site.yml
 ### Запуск отдельных ролей
 
 ```bash
-# Только файрвол
-ansible-playbook site.yml --tags ufw
+# Базовые роли
+ansible-playbook site.yml --tags common        # Обновление системы
+ansible-playbook site.yml --tags users         # Создание пользователя
+ansible-playbook site.yml --tags ssh           # Настройка SSH
+ansible-playbook site.yml --tags ufw           # Файрвол
+ansible-playbook site.yml --tags fail2ban      # Fail2ban
 
-# SSH и fail2ban
-ansible-playbook site.yml --tags "ssh,fail2ban"
+# Группы ролей
+ansible-playbook site.yml --tags security      # SSH + UFW + fail2ban
+ansible-playbook site.yml --tags notifications # msmtp + login_notify
 
-# Пропустить создание пользователя
+# Пропустить роль
 ansible-playbook site.yml --skip-tags users
 ```
 
 ### Запуск на конкретных хостах
 
 ```bash
-# Один хост
-ansible-playbook site.yml --limit server1
-
-# Несколько хостов
+ansible-playbook site.yml --limit myserver
 ansible-playbook site.yml --limit "server1,server2"
 ```
 
-### Подключение по паролю (вместо SSH ключа)
+### Подключение по паролю
 
 ```bash
-# Запросить SSH пароль при подключении
-ansible-playbook site.yml --ask-pass
-
-# Запросить sudo пароль
-ansible-playbook site.yml --ask-become-pass
-
-# Оба сразу (короткая форма)
-ansible-playbook site.yml -k -K
+ansible-playbook site.yml --ask-pass           # SSH пароль
+ansible-playbook site.yml --ask-become-pass    # sudo пароль
+ansible-playbook site.yml -k -K                # оба сразу
 ```
 
-### Использование vault для секретов
+### Использование vault
 
-Для безопасного хранения паролей используйте ansible-vault:
-
-```bash
-# Создать зашифрованный файл
-ansible-vault create group_vars/vault.yml
-```
-
-Добавьте в него пароли:
-```yaml
-vault_ansible_ssh_pass: "ваш_ssh_пароль"
-vault_ansible_become_pass: "ваш_sudo_пароль"
-```
-
-Затем в `inventories/hosts.ini` укажите:
-```ini
-ansible_ssh_pass={{ vault_ansible_ssh_pass }}
-ansible_become_pass={{ vault_ansible_become_pass }}
-```
-
-Запуск:
 ```bash
 # С запросом пароля vault
 ansible-playbook site.yml --ask-vault-pass
 
-# Или с файлом пароля (добавьте .vault_pass в .gitignore!)
+# С файлом пароля
 echo "ваш_vault_пароль" > .vault_pass
+chmod 600 .vault_pass
 ansible-playbook site.yml --vault-password-file .vault_pass
 ```
 
@@ -161,16 +194,19 @@ ansible-vps-setup/
 ├── site.yml                 # Главный playbook
 ├── inventories/
 │   ├── hosts.ini.example    # Шаблон inventory
-│   └── hosts.ini            # Ваш inventory (игнорируется git)
+│   └── hosts.ini            # Ваш inventory (gitignored)
 ├── group_vars/
 │   ├── all.yml.example      # Шаблон переменных
-│   └── all.yml              # Ваши переменные (игнорируется git)
+│   ├── all.yml              # Ваши переменные (gitignored)
+│   └── vault.yml            # Секреты (gitignored, зашифрован)
 └── roles/
     ├── common/              # Обновление системы, пакеты
     ├── users/               # Создание пользователей, SSH ключи
     ├── ssh/                 # Настройка безопасности SSH
     ├── ufw/                 # Правила файрвола
-    └── fail2ban/            # Защита от brute force
+    ├── fail2ban/            # Защита от brute force
+    ├── msmtp/               # Настройка отправки почты
+    └── login_notify/        # PAM уведомления о входе
 ```
 
 ## Справочник параметров
@@ -197,8 +233,21 @@ ansible-vps-setup/
 | Переменная | По умолчанию | Описание |
 |------------|--------------|----------|
 | `fail2ban_maxretry` | 5 | Макс. неудачных попыток до бана |
-| `fail2ban_bantime` | 86400 | Длительность бана (секунды) |
+| `fail2ban_bantime` | -1 | Длительность бана (-1 = постоянный) |
 | `fail2ban_ignoreip` | [127.0.0.1/8] | IP которые никогда не банить |
+| `fail2ban_email_enabled` | false | Включить email уведомления |
+
+### Настройки уведомлений
+
+| Переменная | По умолчанию | Описание |
+|------------|--------------|----------|
+| `smtp_host` | smtp.gmail.com | SMTP сервер |
+| `smtp_port` | 587 | SMTP порт |
+| `smtp_email` | — | Email отправителя (из vault) |
+| `smtp_password` | — | Пароль SMTP (из vault) |
+| `notify_email` | — | Email для уведомлений (из vault) |
+| `server_name` | MY-VPS | Имя сервера в письмах |
+| `login_notify_geoip` | true | Определять страну по IP |
 
 ## Важно о безопасности
 
@@ -233,6 +282,19 @@ ansible-playbook site.yml -vvv
 
 # Проверка связи
 ansible all -m ping -vvv
+```
+
+### Не приходят уведомления
+
+```bash
+# Проверить лог msmtp
+tail -f /var/log/msmtp.log
+
+# Тест отправки письма
+echo "Test" | mailx -s "Test" your@email.com
+
+# Проверить PAM
+sudo tail -f /var/log/auth.log
 ```
 
 ## Лицензия

@@ -1,0 +1,6 @@
+---
+# Обработчики msmtp
+
+- name: Проверка конфигурации msmtp
+  ansible.builtin.command: msmtp --version
+  changed_when: false

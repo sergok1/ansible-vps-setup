@@ -62,6 +62,39 @@ fail2ban_ssh_maxretry: 5
 fail2ban_ssh_findtime: 120               # 2 минуты
 fail2ban_ssh_bantime: -1                 # Постоянный бан
 
+# Email уведомления fail2ban (требует настройки msmtp)
+fail2ban_email_enabled: false            # Включить уведомления о банах
+# fail2ban_destemail: "{{ notify_email }}"
+# fail2ban_sender: "{{ smtp_email }}"
+
+# ==============================================================================
+# Настройка уведомлений (msmtp + login_notify)
+# ==============================================================================
+# ВАЖНО: Секретные данные храните в vault!
+# Создайте: ansible-vault create group_vars/vault.yml
+# И добавьте туда:
+#   vault_smtp_email: "your-email@gmail.com"
+#   vault_smtp_password: "xxxx-xxxx-xxxx-xxxx"
+#   vault_notify_email: "alerts@gmail.com"
+
+# Подключение переменных из vault:
+# smtp_email: "{{ vault_smtp_email }}"
+# smtp_password: "{{ vault_smtp_password }}"
+# notify_email: "{{ vault_notify_email }}"
+
+# Имя сервера в уведомлениях
+server_name: "MY-VPS"
+
+# SMTP настройки (Gmail по умолчанию)
+smtp_host: "smtp.gmail.com"
+smtp_port: 587
+
+# Отправить тестовое письмо после настройки msmtp
+msmtp_send_test_email: true
+
+# Установить GeoIP для определения страны в уведомлениях о входе
+login_notify_geoip: true
+
 # ==============================================================================
 # Системные настройки
 # ==============================================================================
@@ -73,7 +106,6 @@ common_packages:
   - curl
   - wget
   - vim
-  - htop
   - git
   - unzip
   - net-tools

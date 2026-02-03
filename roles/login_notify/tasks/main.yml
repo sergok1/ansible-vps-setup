@@ -1,0 +1,37 @@
+---
+# Настройка PAM уведомлений о входе в систему
+
+- name: Установка GeoIP (опционально)
+  ansible.builtin.apt:
+    name:
+      - geoip-bin
+      - geoip-database
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+  when: login_notify_geoip | default(true)
+
+- name: Создание скрипта уведомлений о входе
+  ansible.builtin.template:
+    src: login-notify.sh.j2
+    dest: /usr/local/bin/login-notify.sh
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Проверка наличия строки PAM в common-session
+  ansible.builtin.lineinfile:
+    path: /etc/pam.d/common-session
+    regexp: 'pam_exec.so.*login-notify.sh'
+    state: absent
+  check_mode: true
+  register: pam_check
+  changed_when: false
+
+- name: Добавление PAM hook для уведомлений
+  ansible.builtin.lineinfile:
+    path: /etc/pam.d/common-session
+    line: "session optional pam_exec.so seteuid /usr/local/bin/login-notify.sh"
+    insertafter: EOF
+    state: present
+  when: pam_check.found == 0

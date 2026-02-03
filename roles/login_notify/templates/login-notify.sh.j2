@@ -1,0 +1,95 @@
+#!/bin/bash
+# Скрипт уведомлений о входе в систему
+# Управляется Ansible - НЕ РЕДАКТИРОВАТЬ ВРУЧНУЮ
+
+# === НАСТРОЙКИ ===
+EMAIL="{{ notify_email }}"
+SERVER_NAME="{{ server_name }}"
+SERVER_IP="{{ server_ip | default(ansible_default_ipv4.address | default('N/A')) }}"
+
+# === ПРОВЕРКА: только при открытии сессии ===
+[ "$PAM_TYPE" != "open_session" ] && exit 0
+
+{% if login_notify_skip_cron %}
+# Пропускаем cron
+[ "$PAM_SERVICE" = "cron" ] && exit 0
+{% endif %}
+
+{% if login_notify_skip_users | length > 0 %}
+# Пропускаем определённых пользователей
+case "$PAM_USER" in
+{% for user in login_notify_skip_users %}
+    {{ user }}) exit 0 ;;
+{% endfor %}
+esac
+{% endif %}
+
+# === СБОР ИНФОРМАЦИИ ===
+DATE="$(date '+%Y-%m-%d %H:%M:%S %Z')"
+HOSTNAME="$(hostname -f)"
+
+LOGIN_USER="$PAM_USER"
+LOGIN_IP="${PAM_RHOST:-localhost}"
+LOGIN_SERVICE="$PAM_SERVICE"
+LOGIN_TTY="$PAM_TTY"
+
+# === GeoIP (если есть внешний IP) ===
+GEO_INFO="N/A"
+if [[ "$LOGIN_IP" != "localhost" && "$LOGIN_IP" != "127.0.0.1" && -n "$LOGIN_IP" ]]; then
+    if command -v geoiplookup &>/dev/null; then
+        GEO_INFO=$(geoiplookup "$LOGIN_IP" 2>/dev/null | grep Country | cut -d: -f2 | xargs)
+    fi
+fi
+
+# === ОПРЕДЕЛЕНИЕ ТИПА ВХОДА ===
+case "$LOGIN_SERVICE" in
+    sshd)     LOGIN_TYPE="SSH" ;;
+    login)    LOGIN_TYPE="Console/Local" ;;
+    su|su-l)  LOGIN_TYPE="SU (switch user)" ;;
+    sudo)     LOGIN_TYPE="SUDO" ;;
+    gdm*|lightdm*|sddm*) LOGIN_TYPE="GUI Desktop" ;;
+    cron)     LOGIN_TYPE="Cron Job"; exit 0 ;;
+    *)        LOGIN_TYPE="$LOGIN_SERVICE" ;;
+esac
+
+# === СИСТЕМНАЯ ИНФОРМАЦИЯ ===
+UPTIME="$(uptime -p 2>/dev/null || echo 'N/A')"
+LOAD="$(cat /proc/loadavg 2>/dev/null | cut -d' ' -f1-3 || echo 'N/A')"
+MEMORY="$(free -h 2>/dev/null | grep Mem | awk '{print $3"/"$2}' || echo 'N/A')"
+DISK="$(df -h / 2>/dev/null | tail -1 | awk '{print $5}' || echo 'N/A')"
+
+# === ОТПРАВКА ПИСЬМА ===
+SUBJECT="[LOGIN-$SERVER_NAME] $LOGIN_TYPE: $LOGIN_USER from $LOGIN_IP"
+
+MESSAGE="═══════════════════════════════════════
+LOGIN NOTIFICATION
+═══════════════════════════════════════
+
+Server Information:
+• Name: $SERVER_NAME
+• IP: $SERVER_IP
+• Hostname: $HOSTNAME
+
+Login Details:
+• User: $LOGIN_USER
+• Type: $LOGIN_TYPE
+• Service: $LOGIN_SERVICE
+• From: $LOGIN_IP
+• TTY: ${LOGIN_TTY:-N/A}
+• Date: $DATE
+
+IP Information:
+• Country: $GEO_INFO
+
+System Status:
+• Uptime: $UPTIME
+• Load: $LOAD
+• Memory: $MEMORY
+• Disk: $DISK
+
+═══════════════════════════════════════"
+
+# Отправка в фоне чтобы не задерживать вход
+echo "$MESSAGE" | /usr/bin/mailx -s "$SUBJECT" "$EMAIL" &
+
+exit 0
