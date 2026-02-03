@@ -33,7 +33,10 @@ cd ansible-vps-setup
 
 # Копируем примеры файлов
 cp inventories/hosts.ini.example inventories/hosts.ini
-cp group_vars/all.yml.example group_vars/all.yml
+cp group_vars/all/main.yml.example group_vars/all/main.yml
+
+# Создаём vault для секретов (если нужны уведомления)
+ansible-vault create group_vars/all/vault.yml
 ```
 
 ### 2. Редактирование inventory
@@ -53,7 +56,7 @@ ansible_ssh_private_key_file=~/.ssh/id_ed25519
 
 ### 3. Настройка переменных
 
-Отредактируйте `group_vars/all.yml`:
+Отредактируйте `group_vars/all/main.yml`:
 
 ```yaml
 # Обязательные параметры
@@ -106,7 +109,7 @@ vault_smtp_password: "xxxx-xxxx-xxxx-xxxx"  # App Password для Gmail
 vault_notify_email: "alerts@gmail.com"
 ```
 
-### 2. Настроить переменные в all.yml
+### 2. Настроить переменные в main.yml
 
 ```yaml
 # Подключение секретов из vault
@@ -196,9 +199,11 @@ ansible-vps-setup/
 │   ├── hosts.ini.example    # Шаблон inventory
 │   └── hosts.ini            # Ваш inventory (gitignored)
 ├── group_vars/
-│   ├── all.yml.example      # Шаблон переменных
-│   ├── all.yml              # Ваши переменные (gitignored)
-│   └── vault.yml            # Секреты (gitignored, зашифрован)
+│   └── all/                 # Переменные для всех хостов
+│       ├── main.yml.example # Шаблон переменных
+│       ├── main.yml         # Ваши переменные (gitignored)
+│       ├── vault.yml.example# Шаблон секретов
+│       └── vault.yml        # Секреты (gitignored, зашифрован)
 └── roles/
     ├── common/              # Обновление системы, пакеты
     ├── users/               # Создание пользователей, SSH ключи

@@ -1,0 +1,22 @@
+# Пример файла секретов (vault)
+# 
+# Создайте зашифрованный vault:
+#   ansible-vault create group_vars/all/vault.yml
+#
+# Или скопируйте этот файл и зашифруйте:
+#   cp vault.yml.example vault.yml
+#   ansible-vault encrypt vault.yml
+#
+# Редактирование:
+#   ansible-vault edit group_vars/all/vault.yml
+
+# === SMTP настройки для отправки почты ===
+vault_smtp_email: "your-email@gmail.com"
+vault_smtp_password: "xxxx-xxxx-xxxx-xxxx"  # App Password для Gmail
+
+# === Email для получения уведомлений ===
+vault_notify_email: "alerts@gmail.com"
+
+# === Опционально: пароли для подключения ===
+# vault_ansible_ssh_pass: "ssh_password"
+# vault_ansible_become_pass: "sudo_password"

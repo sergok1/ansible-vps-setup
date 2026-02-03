@@ -8,9 +8,10 @@ inventories/*.ini
 !inventories/*.example
 
 # Group vars с секретами (используйте .example как шаблон)
-group_vars/all.yml
-group_vars/*.yml
-!group_vars/*.example
+group_vars/all/main.yml
+group_vars/all/vault.yml
+group_vars/all/*.yml
+!group_vars/all/*.example
 
 # Host vars (могут содержать конфиденциальные данные)
 host_vars/
