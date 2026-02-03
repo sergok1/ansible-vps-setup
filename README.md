@@ -109,17 +109,48 @@ ansible-playbook site.yml --limit server1
 ansible-playbook site.yml --limit "server1,server2"
 ```
 
+### Подключение по паролю (вместо SSH ключа)
+
+```bash
+# Запросить SSH пароль при подключении
+ansible-playbook site.yml --ask-pass
+
+# Запросить sudo пароль
+ansible-playbook site.yml --ask-become-pass
+
+# Оба сразу (короткая форма)
+ansible-playbook site.yml -k -K
+```
+
 ### Использование vault для секретов
+
+Для безопасного хранения паролей используйте ansible-vault:
 
 ```bash
 # Создать зашифрованный файл
 ansible-vault create group_vars/vault.yml
+```
 
-# Редактировать зашифрованный файл
-ansible-vault edit group_vars/vault.yml
+Добавьте в него пароли:
+```yaml
+vault_ansible_ssh_pass: "ваш_ssh_пароль"
+vault_ansible_become_pass: "ваш_sudo_пароль"
+```
 
-# Запуск с vault
+Затем в `inventories/hosts.ini` укажите:
+```ini
+ansible_ssh_pass={{ vault_ansible_ssh_pass }}
+ansible_become_pass={{ vault_ansible_become_pass }}
+```
+
+Запуск:
+```bash
+# С запросом пароля vault
 ansible-playbook site.yml --ask-vault-pass
+
+# Или с файлом пароля (добавьте .vault_pass в .gitignore!)
+echo "ваш_vault_пароль" > .vault_pass
+ansible-playbook site.yml --vault-password-file .vault_pass
 ```
 
 ## Структура проекта

@@ -3,18 +3,45 @@
 # cp hosts.ini.example hosts.ini
 
 [vps]
+# Формат: ALIAS ansible_host=IP_АДРЕС
+# ALIAS — это произвольное имя для хоста (будет отображаться в выводе Ansible)
+# Можно использовать любое удобное имя: server1, myserver, prod-web и т.д.
+
 # Пример одного хоста:
-# server1 ansible_host=192.168.1.100
+# myserver ansible_host=192.168.1.100
 
 # Пример нескольких хостов:
-# server1 ansible_host=192.168.1.100
-# server2 ansible_host=192.168.1.101
-# server3 ansible_host=10.0.0.50
+# web-server ansible_host=192.168.1.100
+# db-server ansible_host=192.168.1.101
+# vpn-server ansible_host=10.0.0.50
 
 # С кастомным SSH портом (для уже настроенных серверов):
-# server1 ansible_host=192.168.1.100 ansible_port=22
+# myserver ansible_host=192.168.1.100 ansible_port=2222
 
 [vps:vars]
+# === Аутентификация по SSH ключу (рекомендуется) ===
 ansible_user=root
 ansible_ssh_private_key_file=~/.ssh/id_ed25519
+
+# === Аутентификация по паролю ===
+# Вариант 1: Указать пароль в файле (НЕ РЕКОМЕНДУЕТСЯ для публичных репо!)
+#            Лучше хранить в зашифрованном vault-файле (см. ниже)
+# ansible_ssh_pass=ваш_пароль
+# ansible_become_pass=ваш_sudo_пароль
+
+# Вариант 2: Запрашивать пароль при запуске (безопаснее)
+#            ansible-playbook site.yml --ask-pass        # SSH пароль
+#            ansible-playbook site.yml --ask-become-pass # sudo пароль
+#            ansible-playbook site.yml -k -K             # оба сразу
+
+# === Для использования ansible-vault ===
+# Создайте зашифрованный файл:
+#   ansible-vault create group_vars/vault.yml
+# Добавьте туда:
+#   vault_ansible_ssh_pass: "ваш_пароль"
+#   vault_ansible_become_pass: "ваш_sudo_пароль"
+# И раскомментируйте ниже:
+# ansible_ssh_pass={{ vault_ansible_ssh_pass }}
+# ansible_become_pass={{ vault_ansible_become_pass }}
+
 # ansible_python_interpreter=/usr/bin/python3
