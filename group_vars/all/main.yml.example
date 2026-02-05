@@ -71,8 +71,9 @@ fail2ban_ssh_maxretry: 5
 fail2ban_ssh_findtime: 120               # 2 минуты
 fail2ban_ssh_bantime: -1                 # Постоянный бан
 
-# Email уведомления fail2ban (требует настройки msmtp)
-fail2ban_email_enabled: false            # Включить уведомления о банах
+# Email уведомления fail2ban (требует настройки msmtp и vault)
+# Раскомментируйте для включения:
+# fail2ban_email_enabled: true
 # fail2ban_destemail: "{{ notify_email }}"
 # fail2ban_sender: "{{ smtp_email }}"
 
@@ -99,17 +100,28 @@ auto_update_blacklist: []
 #   - docker-ce
 #   - kubelet
 
+# Email уведомления об обновлениях (требует настройки msmtp и vault)
+# Раскомментируйте для включения:
+# auto_update_mail_enabled: true
+# auto_update_mail_to: "{{ notify_email }}"
+# auto_update_mail_on_error: true          # Отправлять только при ошибках
+
 # ==============================================================================
 # Настройка уведомлений (msmtp + login_notify)
 # ==============================================================================
-# ВАЖНО: Секретные данные храните в vault!
-# Создайте: ansible-vault create group_vars/all/vault.yml
-# И добавьте туда:
-#   vault_smtp_email: "your-email@gmail.com"
-#   vault_smtp_password: "xxxx-xxxx-xxxx-xxxx"
-#   vault_notify_email: "alerts@gmail.com"
+# 
+# Для включения email уведомлений:
+# 1. Создайте vault: ansible-vault create group_vars/all/vault.yml
+# 2. Добавьте туда секреты (см. vault.yml.example)
+# 3. Раскомментируйте строки ниже
+# 4. Запустите: ansible-playbook site.yml --tags notifications --ask-vault-pass
+#
+# После настройки msmtp уведомления будут приходить от:
+# - login_notify: при каждом входе на сервер
+# - fail2ban: при бане IP (если fail2ban_email_enabled: true)
+# - auto_update: при ошибках обновления (если auto_update_mail_enabled: true)
 
-# Подключение переменных из vault:
+# Подключение переменных из vault (раскомментируйте):
 # smtp_email: "{{ vault_smtp_email }}"
 # smtp_password: "{{ vault_smtp_password }}"
 # notify_email: "{{ vault_notify_email }}"
