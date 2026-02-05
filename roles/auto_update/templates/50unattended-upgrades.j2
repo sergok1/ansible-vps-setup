@@ -1,0 +1,60 @@
+// Конфигурация unattended-upgrades
+// Управляется Ansible - НЕ РЕДАКТИРОВАТЬ ВРУЧНУЮ
+
+// Разрешённые источники обновлений
+Unattended-Upgrade::Allowed-Origins {
+{% for origin in auto_update_origins %}
+    "{{ origin }}";
+{% endfor %}
+};
+
+// Пакеты которые НЕ обновлять
+Unattended-Upgrade::Package-Blacklist {
+{% for pkg in auto_update_blacklist %}
+    "{{ pkg }}";
+{% endfor %}
+};
+
+// Автоматическое исправление прерванных dpkg
+Unattended-Upgrade::AutoFixInterruptedDpkg "true";
+
+// Минимальные шаги (безопаснее при прерывании)
+Unattended-Upgrade::MinimalSteps "true";
+
+// Установка обновлений при выключении
+Unattended-Upgrade::InstallOnShutdown "false";
+
+{% if auto_update_mail_enabled and auto_update_mail_to is defined %}
+// Email уведомления
+Unattended-Upgrade::Mail "{{ auto_update_mail_to }}";
+{% if auto_update_mail_on_error %}
+Unattended-Upgrade::MailOnlyOnError "true";
+{% else %}
+Unattended-Upgrade::MailOnlyOnError "false";
+{% endif %}
+{% endif %}
+
+// Удаление неиспользуемых зависимостей
+Unattended-Upgrade::Remove-Unused-Dependencies "{{ 'true' if auto_update_remove_unused else 'false' }}";
+
+// Удаление неиспользуемых ядер
+Unattended-Upgrade::Remove-Unused-Kernel-Packages "{{ 'true' if auto_update_remove_unused_kernel else 'false' }}";
+
+// Автоматическая перезагрузка
+Unattended-Upgrade::Automatic-Reboot "{{ 'true' if auto_update_reboot else 'false' }}";
+
+{% if auto_update_reboot %}
+// Время перезагрузки
+Unattended-Upgrade::Automatic-Reboot-Time "{{ auto_update_reboot_time }}";
+
+// Перезагружать даже если есть пользователи
+Unattended-Upgrade::Automatic-Reboot-WithUsers "{{ 'true' if auto_update_reboot_with_users else 'false' }}";
+{% endif %}
+
+// Логирование в syslog
+Unattended-Upgrade::SyslogEnable "true";
+Unattended-Upgrade::SyslogFacility "daemon";
+
+// Verbose логи
+Unattended-Upgrade::Verbose "false";
+Unattended-Upgrade::Debug "false";

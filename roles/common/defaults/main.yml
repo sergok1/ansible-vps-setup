@@ -5,12 +5,16 @@ common_packages:
   - curl
   - wget
   - vim
-  - htop
   - git
   - unzip
 
-common_upgrade_packages: false  # Обновлять ли все пакеты
-common_set_hostname: false      # Устанавливать ли hostname
+common_upgrade_packages: false  # Обновлять ли все пакеты при запуске
+
+# === Hostname ===
+common_set_hostname: true       # Устанавливать hostname из inventory
+
+# Hostname можно задать явно, иначе используется inventory_hostname
+# server_hostname: "my-server"
 
 timezone: "UTC"
 locale: "en_US.UTF-8"

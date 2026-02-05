@@ -29,7 +29,26 @@
     state: present
   when: locale is defined
 
+# === Настройка hostname ===
 - name: Установка hostname
   ansible.builtin.hostname:
-    name: "{{ inventory_hostname_short }}"
-  when: common_set_hostname | default(false)
+    name: "{{ server_hostname | default(inventory_hostname) }}"
+  when: common_set_hostname | default(true)
+
+- name: Добавление hostname в /etc/hosts
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    regexp: '^127\.0\.1\.1'
+    line: "127.0.1.1 {{ server_hostname | default(inventory_hostname) }}"
+    state: present
+  when: common_set_hostname | default(true)
+
+- name: Добавление записи с внешним IP в /etc/hosts
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    regexp: "^{{ ansible_host }}.*{{ server_hostname | default(inventory_hostname) }}"
+    line: "{{ ansible_host }} {{ server_hostname | default(inventory_hostname) }}"
+    state: present
+  when: 
+    - common_set_hostname | default(true)
+    - ansible_host is defined

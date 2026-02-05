@@ -1,0 +1,14 @@
+// Настройки периодичности apt
+// Управляется Ansible - НЕ РЕДАКТИРОВАТЬ ВРУЧНУЮ
+
+// Обновлять список пакетов (1 = ежедневно)
+APT::Periodic::Update-Package-Lists "1";
+
+// Скачивать обновления (1 = ежедневно)
+APT::Periodic::Download-Upgradeable-Packages "1";
+
+// Запускать unattended-upgrade (1 = ежедневно, мы используем cron для точного расписания)
+APT::Periodic::Unattended-Upgrade "{{ '0' if auto_update_use_cron else '1' }}";
+
+// Очистка кэша apt (7 = раз в неделю)
+APT::Periodic::AutocleanInterval "7";

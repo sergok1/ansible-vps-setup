@@ -1,0 +1,44 @@
+---
+# Переменные по умолчанию для роли auto_update
+
+# === Расписание обновлений ===
+# По умолчанию: среда в 04:00
+auto_update_weekday: "3"      # 0=воскресенье, 1=понедельник, ..., 6=суббота
+auto_update_hour: "4"
+auto_update_minute: "0"
+
+# Использовать cron вместо systemd timer
+auto_update_use_cron: true
+
+# === Типы обновлений ===
+# Обновлять только security патчи
+auto_update_security_only: false
+
+# Разрешённые источники обновлений
+auto_update_origins:
+  - "${distro_id}:${distro_codename}"
+  - "${distro_id}:${distro_codename}-security"
+  - "${distro_id}:${distro_codename}-updates"
+
+# === Автоперезагрузка ===
+auto_update_reboot: true                    # Разрешить автоперезагрузку
+auto_update_reboot_time: "04:30"            # Время перезагрузки
+auto_update_reboot_with_users: false        # Перезагружать даже если есть залогиненные пользователи
+
+# === Очистка ===
+auto_update_remove_unused: true             # Удалять неиспользуемые пакеты
+auto_update_remove_unused_kernel: true      # Удалять старые ядра
+
+# === Уведомления ===
+# Если настроен msmtp, можно включить уведомления
+auto_update_mail_enabled: false
+# auto_update_mail_to: "{{ notify_email }}"
+auto_update_mail_on_error: true             # Отправлять только при ошибках
+
+# === Blacklist пакетов ===
+# Пакеты которые НЕ обновлять автоматически
+auto_update_blacklist: []
+# auto_update_blacklist:
+#   - docker-ce
+#   - docker-ce-cli
+#   - kubelet

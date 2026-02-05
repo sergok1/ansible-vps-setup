@@ -4,10 +4,12 @@ Ansible playbook для начальной настройки безопасно
 
 ## Возможности
 
+- **Hostname**: Автоматическая настройка имени сервера из inventory
 - **Управление пользователями**: Создание админа с sudo и SSH-ключами
 - **Защита SSH**: Кастомный порт, отключение root-логина и парольной аутентификации
 - **Файрвол UFW**: Настраиваемые правила с rate limiting для SSH
 - **Fail2ban**: Защита от brute force атак с опциональными email-уведомлениями
+- **Автообновления**: Автоматическое обновление системы по расписанию с автоперезагрузкой
 - **msmtp**: Настройка отправки почты через SMTP (Gmail и др.)
 - **Login Notify**: Уведомления о любом входе в систему через PAM
 
@@ -148,11 +150,12 @@ ansible-playbook site.yml --tags "security,notifications" --ask-vault-pass -K
 
 ```bash
 # Базовые роли
-ansible-playbook site.yml --tags common        # Обновление системы
+ansible-playbook site.yml --tags common        # Обновление + hostname
 ansible-playbook site.yml --tags users         # Создание пользователя
 ansible-playbook site.yml --tags ssh           # Настройка SSH
 ansible-playbook site.yml --tags ufw           # Файрвол
 ansible-playbook site.yml --tags fail2ban      # Fail2ban
+ansible-playbook site.yml --tags auto_update   # Автообновления
 
 # Группы ролей
 ansible-playbook site.yml --tags security      # SSH + UFW + fail2ban
@@ -205,11 +208,12 @@ ansible-vps-setup/
 │       ├── vault.yml.example# Шаблон секретов
 │       └── vault.yml        # Секреты (gitignored, зашифрован)
 └── roles/
-    ├── common/              # Обновление системы, пакеты
+    ├── common/              # Обновление системы, hostname, пакеты
     ├── users/               # Создание пользователей, SSH ключи
     ├── ssh/                 # Настройка безопасности SSH
     ├── ufw/                 # Правила файрвола
     ├── fail2ban/            # Защита от brute force
+    ├── auto_update/         # Автообновления по расписанию
     ├── msmtp/               # Настройка отправки почты
     └── login_notify/        # PAM уведомления о входе
 ```
@@ -241,6 +245,17 @@ ansible-vps-setup/
 | `fail2ban_bantime` | -1 | Длительность бана (-1 = постоянный) |
 | `fail2ban_ignoreip` | [127.0.0.1/8] | IP которые никогда не банить |
 | `fail2ban_email_enabled` | false | Включить email уведомления |
+
+### Настройки автообновлений
+
+| Переменная | По умолчанию | Описание |
+|------------|--------------|----------|
+| `auto_update_weekday` | 3 | День недели (0=вс, 3=ср) |
+| `auto_update_hour` | 4 | Час запуска |
+| `auto_update_minute` | 0 | Минута запуска |
+| `auto_update_reboot` | true | Автоперезагрузка если нужна |
+| `auto_update_reboot_time` | 04:30 | Время перезагрузки |
+| `auto_update_blacklist` | [] | Пакеты НЕ обновлять |
 
 ### Настройки уведомлений
 

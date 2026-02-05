@@ -7,16 +7,17 @@
 #   ansible-playbook site.yml --ask-vault-pass     # С vault для секретов
 #
 # Запуск отдельных ролей:
-#   ansible-playbook site.yml --tags common        # Только обновление системы
-#   ansible-playbook site.yml --tags users         # Только создание пользователя
-#   ansible-playbook site.yml --tags ssh           # Только настройка SSH
-#   ansible-playbook site.yml --tags ufw           # Только файрвол
-#   ansible-playbook site.yml --tags fail2ban      # Только fail2ban
+#   ansible-playbook site.yml --tags common        # Обновление системы + hostname
+#   ansible-playbook site.yml --tags users         # Создание пользователя
+#   ansible-playbook site.yml --tags ssh           # Настройка SSH
+#   ansible-playbook site.yml --tags ufw           # Файрвол
+#   ansible-playbook site.yml --tags fail2ban      # Fail2ban
 #   ansible-playbook site.yml --tags security      # SSH + UFW + fail2ban
+#   ansible-playbook site.yml --tags auto_update   # Автообновления
 #
 # Уведомления:
-#   ansible-playbook site.yml --tags msmtp         # Только настройка почты
-#   ansible-playbook site.yml --tags login_notify  # Только PAM уведомления о входе
+#   ansible-playbook site.yml --tags msmtp         # Настройка почты
+#   ansible-playbook site.yml --tags login_notify  # PAM уведомления о входе
 #   ansible-playbook site.yml --tags notifications # msmtp + login_notify
 
 - name: Начальная настройка безопасности VPS
@@ -30,7 +31,7 @@
         that:
           - admin_user is defined
           - ssh_port is defined
-        fail_msg: "Обязательные переменные не определены. Проверьте group_vars/all.yml"
+        fail_msg: "Обязательные переменные не определены. Проверьте group_vars/all/main.yml"
 
   roles:
     # === Базовая настройка ===
@@ -50,6 +51,10 @@
     - role: fail2ban
       tags: [fail2ban, security]
 
+    # === Автообновления ===
+    - role: auto_update
+      tags: [auto_update, maintenance]
+
     # === Уведомления (опционально) ===
     - role: msmtp
       tags: [msmtp, notifications, never]
@@ -66,10 +71,11 @@
           ========================================
           Настройка VPS завершена!
           ========================================
+          Hostname: {{ server_hostname | default(inventory_hostname) }}
           SSH порт: {{ ssh_port }}
           Пользователь: {{ admin_user }}
           
           Для подключения:
-          ssh -p {{ ssh_port }} {{ admin_user }}@{{ inventory_hostname }}
+          ssh -p {{ ssh_port }} {{ admin_user }}@{{ server_hostname | default(inventory_hostname) }}
           ========================================
       tags: [always]
