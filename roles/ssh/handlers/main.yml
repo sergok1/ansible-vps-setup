@@ -5,3 +5,11 @@
   ansible.builtin.service:
     name: "{{ ssh_service_name }}"
     state: restarted
+  notify: Проверка доступности SSH
+
+- name: Проверка доступности SSH
+  ansible.builtin.wait_for:
+    port: "{{ ssh_port }}"
+    host: "{{ ansible_host | default('0.0.0.0') }}"
+    delay: 2
+    timeout: 30

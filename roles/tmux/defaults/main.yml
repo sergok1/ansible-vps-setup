@@ -1,0 +1,21 @@
+---
+# Переменные по умолчанию для роли tmux
+
+# === Мышь ===
+tmux_mouse: true              # Включить поддержку мыши (выделение, скролл, ресайз панелей)
+
+# === Скролл ===
+tmux_history_limit: 10000     # Размер буфера прокрутки (строк)
+
+# === Поведение ===
+tmux_base_index: 1            # Нумерация окон с 1 (вместо 0)
+tmux_pane_base_index: 1       # Нумерация панелей с 1
+tmux_renumber_windows: true   # Перенумеровывать окна при закрытии
+tmux_escape_time: 0           # Убрать задержку после Escape (важно для vim)
+
+# === Внешний вид ===
+tmux_default_terminal: "screen-256color"  # Поддержка 256 цветов
+tmux_status_position: "bottom"            # Позиция статус-бара: top / bottom
+
+# === Дополнительно ===
+tmux_configure_root: true     # Настроить tmux и для root-пользователя

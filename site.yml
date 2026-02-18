@@ -14,6 +14,7 @@
 #   ansible-playbook site.yml --tags fail2ban      # Fail2ban
 #   ansible-playbook site.yml --tags security      # SSH + UFW + fail2ban
 #   ansible-playbook site.yml --tags auto_update   # Автообновления
+#   ansible-playbook site.yml --tags tmux           # Установка и настройка tmux
 #
 # Уведомления:
 #   ansible-playbook site.yml --tags msmtp         # Настройка почты
@@ -22,7 +23,6 @@
 
 - name: Начальная настройка безопасности VPS
   hosts: vps
-  become: true
   gather_facts: true
 
   pre_tasks:
@@ -42,11 +42,12 @@
       tags: [users]
 
     # === Безопасность ===
-    - role: ssh
-      tags: [ssh, security]
-
+    # UFW перед SSH: порт должен быть открыт до рестарта sshd
     - role: ufw
       tags: [ufw, firewall, security]
+
+    - role: ssh
+      tags: [ssh, security]
 
     - role: fail2ban
       tags: [fail2ban, security]
@@ -54,6 +55,10 @@
     # === Автообновления ===
     - role: auto_update
       tags: [auto_update, maintenance]
+
+    # === Инструменты ===
+    - role: tmux
+      tags: [tmux, tools]
 
     # === Уведомления (опционально) ===
     - role: msmtp

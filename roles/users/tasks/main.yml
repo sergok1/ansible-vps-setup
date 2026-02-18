@@ -10,7 +10,7 @@
 - name: Создание пользователя админа
   ansible.builtin.user:
     name: "{{ admin_user }}"
-    groups: "{{ admin_groups | join(',') }}"
+    groups: "{{ admin_groups }}"
     shell: /bin/bash
     create_home: true
     state: present

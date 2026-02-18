@@ -23,6 +23,14 @@
     direction: outgoing
     policy: "{{ ufw_default_outgoing_policy }}"
 
+- name: Rate limiting для SSH порта
+  community.general.ufw:
+    rule: limit
+    port: "{{ ssh_port | string }}"
+    proto: tcp
+    comment: "Rate limit SSH"
+  when: ufw_rate_limit_ssh | default(true)
+
 - name: Разрешение настроенных портов
   community.general.ufw:
     rule: allow
@@ -30,7 +38,9 @@
     proto: "{{ item.proto }}"
     comment: "{{ item.comment | default(omit) }}"
   loop: "{{ ufw_allowed_ports }}"
-  when: ufw_allowed_ports is defined
+  when:
+    - ufw_allowed_ports is defined
+    - not (ufw_rate_limit_ssh | default(true) and item.port | string == ssh_port | string)
 
 - name: Разрешение доступа для определённых IP
   community.general.ufw:
@@ -41,14 +51,6 @@
     comment: "{{ item.comment | default(omit) }}"
   loop: "{{ ufw_allowed_ips }}"
   when: ufw_allowed_ips is defined
-
-- name: Rate limiting для SSH порта
-  community.general.ufw:
-    rule: limit
-    port: "{{ ssh_port | string }}"
-    proto: tcp
-    comment: "Rate limit SSH"
-  when: ufw_rate_limit_ssh | default(true)
 
 - name: Включение UFW
   community.general.ufw:

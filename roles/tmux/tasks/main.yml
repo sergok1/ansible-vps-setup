@@ -1,0 +1,26 @@
+---
+# Задачи установки и настройки tmux
+
+- name: Установка tmux
+  ansible.builtin.apt:
+    name: tmux
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Создание конфигурации tmux для пользователя {{ admin_user }}
+  ansible.builtin.template:
+    src: tmux.conf.j2
+    dest: "/home/{{ admin_user }}/.tmux.conf"
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: '0644'
+
+- name: Создание конфигурации tmux для root
+  ansible.builtin.template:
+    src: tmux.conf.j2
+    dest: /root/.tmux.conf
+    owner: root
+    group: root
+    mode: '0644'
+  when: tmux_configure_root | default(true)

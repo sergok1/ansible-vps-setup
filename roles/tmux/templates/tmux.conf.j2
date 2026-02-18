@@ -1,0 +1,29 @@
+# Конфигурация tmux
+# Управляется Ansible - НЕ РЕДАКТИРОВАТЬ ВРУЧНУЮ
+
+# === Мышь и скролл ===
+{% if tmux_mouse %}
+set -g mouse on
+{% else %}
+set -g mouse off
+{% endif %}
+
+# Буфер прокрутки
+set -g history-limit {{ tmux_history_limit }}
+
+# === Нумерация ===
+set -g base-index {{ tmux_base_index }}
+setw -g pane-base-index {{ tmux_pane_base_index }}
+
+# === Поведение ===
+{% if tmux_renumber_windows %}
+set -g renumber-windows on
+{% endif %}
+set -sg escape-time {{ tmux_escape_time }}
+
+# === Терминал ===
+set -g default-terminal "{{ tmux_default_terminal }}"
+set -ga terminal-overrides ",xterm-256color:Tc"
+
+# === Статус-бар ===
+set -g status-position {{ tmux_status_position }}

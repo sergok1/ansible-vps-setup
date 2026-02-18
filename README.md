@@ -12,6 +12,7 @@ Ansible playbook для начальной настройки безопасно
 - **Автообновления**: Автоматическое обновление системы по расписанию с автоперезагрузкой
 - **msmtp**: Настройка отправки почты через SMTP (Gmail и др.)
 - **Login Notify**: Уведомления о любом входе в систему через PAM
+- **tmux**: Установка и настройка tmux с поддержкой мыши и скролла
 
 ## Требования
 
@@ -156,6 +157,7 @@ ansible-playbook site.yml --tags ssh           # Настройка SSH
 ansible-playbook site.yml --tags ufw           # Файрвол
 ansible-playbook site.yml --tags fail2ban      # Fail2ban
 ansible-playbook site.yml --tags auto_update   # Автообновления
+ansible-playbook site.yml --tags tmux           # tmux с мышью и скроллом
 
 # Группы ролей
 ansible-playbook site.yml --tags security      # SSH + UFW + fail2ban
@@ -214,6 +216,7 @@ ansible-vps-setup/
     ├── ufw/                 # Правила файрвола
     ├── fail2ban/            # Защита от brute force
     ├── auto_update/         # Автообновления по расписанию
+    ├── tmux/                # Установка и настройка tmux
     ├── msmtp/               # Настройка отправки почты
     └── login_notify/        # PAM уведомления о входе
 ```
@@ -256,6 +259,20 @@ ansible-vps-setup/
 | `auto_update_reboot` | true | Автоперезагрузка если нужна |
 | `auto_update_reboot_time` | 04:30 | Время перезагрузки |
 | `auto_update_blacklist` | [] | Пакеты НЕ обновлять |
+
+### Настройки tmux
+
+| Переменная | По умолчанию | Описание |
+|------------|--------------|----------|
+| `tmux_mouse` | true | Включить поддержку мыши (выделение, скролл, ресайз панелей) |
+| `tmux_history_limit` | 10000 | Размер буфера прокрутки (строк) |
+| `tmux_base_index` | 1 | Нумерация окон с 1 |
+| `tmux_pane_base_index` | 1 | Нумерация панелей с 1 |
+| `tmux_renumber_windows` | true | Перенумеровывать окна при закрытии |
+| `tmux_escape_time` | 0 | Задержка после Escape (мс) |
+| `tmux_default_terminal` | screen-256color | Тип терминала |
+| `tmux_status_position` | bottom | Позиция статус-бара |
+| `tmux_configure_root` | true | Настроить tmux и для root |
 
 ### Настройки уведомлений
 

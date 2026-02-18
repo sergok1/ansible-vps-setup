@@ -2,5 +2,5 @@
 # Обработчики msmtp
 
 - name: Проверка конфигурации msmtp
-  ansible.builtin.command: msmtp --version
+  ansible.builtin.command: msmtp --serverinfo --account={{ smtp_account_name }}
   changed_when: false

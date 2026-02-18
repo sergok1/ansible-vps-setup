@@ -42,4 +42,12 @@
     echo "Тестовое письмо от msmtp на сервере {{ inventory_hostname }}" | mailx -s "[{{ server_name }}] msmtp настроен успешно" {{ notify_email }}
   when: msmtp_send_test_email | default(true)
   changed_when: false
-  ignore_errors: true
+  register: msmtp_test_result
+  failed_when: false
+
+- name: Предупреждение при неудачной отправке тестового письма
+  ansible.builtin.debug:
+    msg: "ВНИМАНИЕ: Тестовое письмо не отправлено. Проверьте настройки SMTP. Ошибка: {{ msmtp_test_result.stderr | default('неизвестна') }}"
+  when:
+    - msmtp_send_test_email | default(true)
+    - msmtp_test_result.rc | default(0) != 0
