@@ -2,9 +2,10 @@
 # Главный playbook для настройки безопасности VPS
 #
 # Использование:
-#   ansible-playbook site.yml                      # Запуск всех ролей
-#   ansible-playbook site.yml --check --diff       # Тестовый запуск (покажет изменения без применения)
-#   ansible-playbook site.yml --ask-vault-pass     # С vault для секретов
+#   ansible-playbook site.yml -K                              # Запуск всех ролей
+#   ansible-playbook site.yml --check --diff -K               # Тестовый запуск (покажет изменения без применения)
+#   ansible-playbook site.yml --ask-vault-pass -K             # С vault для секретов
+#   ansible-playbook site.yml --check --diff --ask-vault-pass -K  # Тестовый запуск с vault
 #
 # Запуск отдельных ролей:
 #   ansible-playbook site.yml --tags common        # Обновление системы + hostname

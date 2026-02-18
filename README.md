@@ -86,13 +86,16 @@ fail2ban_ignoreip:
 ansible all -m ping
 
 # Тестовый запуск — покажет ЧТО изменится, но НЕ применит изменения
-ansible-playbook site.yml --check --diff
+ansible-playbook site.yml --check --diff -K
+
+# С vault (если настроены уведомления)
+ansible-playbook site.yml --check --diff --ask-vault-pass -K
 
 # Выполнение
-ansible-playbook site.yml
-
-# С sudo паролем
 ansible-playbook site.yml -K
+
+# С vault
+ansible-playbook site.yml --ask-vault-pass -K
 ```
 
 ## Настройка уведомлений
