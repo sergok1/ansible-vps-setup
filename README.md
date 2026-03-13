@@ -1,29 +1,31 @@
 # Ansible VPS Setup
 
-Ansible playbook для начальной настройки безопасности VPS. Автоматизирует создание пользователя, настройку SSH, конфигурацию файрвола UFW, защиту fail2ban и настройку уведомлений.
+Ansible playbook для начальной настройки безопасности VPS на Ubuntu/Debian. Автоматизирует создание пользователя, настройку SSH, файрвол UFW, защиту fail2ban, автообновления и email-уведомления о входе.
+
+Протестировано на Ubuntu 20.04, 22.04, 24.04.
 
 ## Возможности
 
-- **Hostname**: Автоматическая настройка имени сервера из inventory
-- **Управление пользователями**: Создание админа с sudo и SSH-ключами
-- **Защита SSH**: Кастомный порт, отключение root-логина и парольной аутентификации
-- **Файрвол UFW**: Настраиваемые правила с rate limiting для SSH
-- **Fail2ban**: Защита от brute force атак с опциональными email-уведомлениями
-- **Автообновления**: Автоматическое обновление системы по расписанию с автоперезагрузкой
-- **msmtp**: Настройка отправки почты через SMTP (Gmail и др.)
-- **Login Notify**: Уведомления о любом входе в систему через PAM
-- **tmux**: Установка и настройка tmux с поддержкой мыши и скролла
+- **Управление пользователями** — создание админа с SSH-ключом и sudo без пароля
+- **Защита SSH** — кастомный порт, отключение root-логина, парольной аутентификации, включение PAM
+- **Файрвол UFW** — настраиваемые правила с rate limiting для SSH
+- **Fail2ban** — защита от brute force с опциональными email-уведомлениями
+- **Автообновления** — обновление системы по расписанию с автоперезагрузкой
+- **msmtp** — отправка почты через SMTP (Gmail и др.)
+- **Login Notify** — email-уведомления о каждом SSH-входе с GeoIP
+- **tmux** — установка и настройка с поддержкой мыши и скролла
+- **Hostname** — автоматическая настройка имени сервера
 
 ## Требования
 
 - Ansible 2.10+
 - Python 3.8+ на управляющей машине
-- Целевая система: Debian/Ubuntu VPS с root-доступом
+- Целевая система: Ubuntu 20.04+ / Debian 11+ с доступом по SSH
 
-### Ansible коллекции
+### Установка коллекций
 
 ```bash
-ansible-galaxy collection install community.general ansible.posix
+ansible-galaxy install -r requirements.yml
 ```
 
 ## Быстрый старт
@@ -34,81 +36,73 @@ ansible-galaxy collection install community.general ansible.posix
 git clone git@github.com:sergok1/ansible-vps-setup.git
 cd ansible-vps-setup
 
-# Копируем примеры файлов
+# Копируем шаблоны
 cp inventories/hosts.ini.example inventories/hosts.ini
 cp group_vars/all/main.yml.example group_vars/all/main.yml
-
-# Создаём vault для секретов (если нужны уведомления)
-ansible-vault create group_vars/all/vault.yml
 ```
 
-### 2. Редактирование inventory
+### 2. Настройка inventory
 
-Отредактируйте `inventories/hosts.ini`, указав IP ваших серверов:
+Отредактируйте `inventories/hosts.ini`:
 
 ```ini
 [vps]
-# ALIAS — произвольное имя для хоста (отображается в выводе Ansible)
 myserver ansible_host=192.168.1.100
-web-server ansible_host=192.168.1.101
 
 [vps:vars]
 ansible_user=root
 ansible_ssh_private_key_file=~/.ssh/id_ed25519
 ```
 
+> **Первый запуск:** подключайтесь как `root` (или существующий пользователь с sudo). После выполнения роли `users` можно сменить `ansible_user` на созданного админа.
+
 ### 3. Настройка переменных
 
 Отредактируйте `group_vars/all/main.yml`:
 
 ```yaml
-# Обязательные параметры
 admin_user: "your_username"
 ssh_public_key_path: "~/.ssh/id_ed25519.pub"
-ssh_port: 2222  # Кастомный SSH порт
+ssh_port: 2222
 
-# Порты UFW
 ufw_allowed_ports:
   - { port: "2222", proto: "tcp", comment: "SSH" }
   - { port: "80", proto: "tcp", comment: "HTTP" }
   - { port: "443", proto: "tcp", comment: "HTTPS" }
 
-# Доверенные IP для fail2ban (не попадут в бан)
 fail2ban_ignoreip:
   - "127.0.0.1/8"
   - "ВАШ_ДОМАШНИЙ_IP"
 ```
 
-### 4. Запуск playbook
+### 4. Запуск
 
 ```bash
 # Проверка подключения
 ansible all -m ping
 
-# Тестовый запуск — покажет ЧТО изменится, но НЕ применит изменения
-ansible-playbook site.yml --check --diff -K
+# Тестовый запуск (покажет изменения без применения)
+ansible-playbook site.yml --check --diff
 
-# С vault (если настроены уведомления)
-ansible-playbook site.yml --check --diff --ask-vault-pass -K
+# Выполнение всех ролей (кроме уведомлений)
+ansible-playbook site.yml
 
-# Выполнение
+# Если sudo требует пароль (до настройки NOPASSWD)
 ansible-playbook site.yml -K
-
-# С vault
-ansible-playbook site.yml --ask-vault-pass -K
 ```
 
 ## Настройка уведомлений
 
-Роли уведомлений (`msmtp`, `login_notify`) по умолчанию **не запускаются**. Для их включения нужно:
+Роли `msmtp` и `login_notify` по умолчанию **не запускаются** (тег `never`).
 
 ### 1. Создать vault с секретами
 
 ```bash
-ansible-vault create group_vars/vault.yml
+ansible-vault create group_vars/all/vault.yml
 ```
 
 Добавьте:
+
 ```yaml
 vault_smtp_email: "your-email@gmail.com"
 vault_smtp_password: "xxxx-xxxx-xxxx-xxxx"  # App Password для Gmail
@@ -118,169 +112,129 @@ vault_notify_email: "alerts@gmail.com"
 ### 2. Настроить переменные в main.yml
 
 ```yaml
-# Подключение секретов из vault
 smtp_email: "{{ vault_smtp_email }}"
 smtp_password: "{{ vault_smtp_password }}"
 notify_email: "{{ vault_notify_email }}"
-
-# Имя сервера в уведомлениях
 server_name: "MY-VPS"
 
-# Включить email уведомления fail2ban
 fail2ban_email_enabled: true
 fail2ban_destemail: "{{ notify_email }}"
 fail2ban_sender: "{{ smtp_email }}"
 ```
 
-### 3. Запустить роли уведомлений
+### 3. Запустить
 
 ```bash
-# Только msmtp
-ansible-playbook site.yml --tags msmtp --ask-vault-pass -K
+# Только уведомления
+ansible-playbook site.yml --tags notifications --ask-vault-pass
 
-# Только уведомления о входе
-ansible-playbook site.yml --tags login_notify --ask-vault-pass -K
-
-# Обе роли
-ansible-playbook site.yml --tags notifications --ask-vault-pass -K
-
-# Всё вместе (безопасность + уведомления)
-ansible-playbook site.yml --tags "security,notifications" --ask-vault-pass -K
+# Всё вместе с уведомлениями
+ansible-playbook site.yml --tags all,notifications --ask-vault-pass
 ```
 
-## Примеры использования
-
-### Запуск отдельных ролей
+## Запуск отдельных ролей
 
 ```bash
-# Базовые роли
 ansible-playbook site.yml --tags common        # Обновление + hostname
 ansible-playbook site.yml --tags users         # Создание пользователя
 ansible-playbook site.yml --tags ssh           # Настройка SSH
 ansible-playbook site.yml --tags ufw           # Файрвол
 ansible-playbook site.yml --tags fail2ban      # Fail2ban
 ansible-playbook site.yml --tags auto_update   # Автообновления
-ansible-playbook site.yml --tags tmux           # tmux с мышью и скроллом
+ansible-playbook site.yml --tags tmux          # tmux
 
 # Группы ролей
 ansible-playbook site.yml --tags security      # SSH + UFW + fail2ban
 ansible-playbook site.yml --tags notifications # msmtp + login_notify
 
+# На конкретном хосте
+ansible-playbook site.yml --limit myserver
+
 # Пропустить роль
 ansible-playbook site.yml --skip-tags users
-```
-
-### Запуск на конкретных хостах
-
-```bash
-ansible-playbook site.yml --limit myserver
-ansible-playbook site.yml --limit "server1,server2"
-```
-
-### Подключение по паролю
-
-```bash
-ansible-playbook site.yml --ask-pass           # SSH пароль
-ansible-playbook site.yml --ask-become-pass    # sudo пароль
-ansible-playbook site.yml -k -K                # оба сразу
-```
-
-### Использование vault
-
-```bash
-# С запросом пароля vault
-ansible-playbook site.yml --ask-vault-pass
-
-# С файлом пароля
-echo "ваш_vault_пароль" > .vault_pass
-chmod 600 .vault_pass
-ansible-playbook site.yml --vault-password-file .vault_pass
 ```
 
 ## Структура проекта
 
 ```
 ansible-vps-setup/
-├── ansible.cfg              # Конфигурация Ansible
-├── site.yml                 # Главный playbook
+├── ansible.cfg
+├── site.yml
+├── requirements.yml
 ├── inventories/
-│   ├── hosts.ini.example    # Шаблон inventory
-│   └── hosts.ini            # Ваш inventory (gitignored)
+│   ├── hosts.ini.example
+│   └── hosts.ini            # gitignored
 ├── group_vars/
-│   └── all/                 # Переменные для всех хостов
-│       ├── main.yml.example # Шаблон переменных
-│       ├── main.yml         # Ваши переменные (gitignored)
-│       ├── vault.yml.example# Шаблон секретов
-│       └── vault.yml        # Секреты (gitignored, зашифрован)
+│   └── all/
+│       ├── main.yml.example
+│       ├── main.yml         # gitignored
+│       ├── vault.yml.example
+│       └── vault.yml        # gitignored, зашифрован
 └── roles/
     ├── common/              # Обновление системы, hostname, пакеты
-    ├── users/               # Создание пользователей, SSH ключи
-    ├── ssh/                 # Настройка безопасности SSH
+    ├── users/               # Пользователь, SSH-ключ, sudo NOPASSWD
+    ├── ssh/                 # Безопасность SSH, UsePAM
     ├── ufw/                 # Правила файрвола
     ├── fail2ban/            # Защита от brute force
     ├── auto_update/         # Автообновления по расписанию
-    ├── tmux/                # Установка и настройка tmux
-    ├── msmtp/               # Настройка отправки почты
-    └── login_notify/        # PAM уведомления о входе
+    ├── tmux/                # tmux с мышью и скроллом
+    ├── msmtp/               # Отправка почты через SMTP
+    └── login_notify/        # PAM-уведомления о SSH-входе
 ```
 
 ## Справочник параметров
 
-### Настройки SSH
+### SSH
 
 | Переменная | По умолчанию | Описание |
-|------------|--------------|----------|
+|---|---|---|
 | `ssh_port` | 22 | Порт SSH |
 | `ssh_permit_root_login` | no | Разрешить SSH для root |
-| `ssh_password_authentication` | no | Разрешить парольную аутентификацию |
+| `ssh_password_authentication` | no | Парольная аутентификация |
 | `ssh_max_auth_tries` | 3 | Макс. попыток аутентификации |
+| `ssh_client_alive_interval` | 300 | Интервал проверки активности (сек) |
+| `ssh_client_alive_count_max` | 2 | Макс. пропущенных проверок |
 
-### Настройки UFW
+### UFW
 
 | Переменная | По умолчанию | Описание |
-|------------|--------------|----------|
-| `ufw_default_incoming_policy` | deny | Политика входящих подключений |
+|---|---|---|
+| `ufw_default_incoming_policy` | deny | Политика входящих |
 | `ufw_rate_limit_ssh` | true | Rate limiting для SSH |
 | `ufw_allowed_ports` | [] | Список разрешённых портов |
 
-### Настройки Fail2ban
+### Fail2ban
 
 | Переменная | По умолчанию | Описание |
-|------------|--------------|----------|
-| `fail2ban_maxretry` | 5 | Макс. неудачных попыток до бана |
-| `fail2ban_bantime` | -1 | Длительность бана (-1 = постоянный) |
-| `fail2ban_ignoreip` | [127.0.0.1/8] | IP которые никогда не банить |
-| `fail2ban_email_enabled` | false | Включить email уведомления |
+|---|---|---|
+| `fail2ban_maxretry` | 5 | Попыток до бана |
+| `fail2ban_bantime` | -1 | Длительность бана (-1 = навсегда) |
+| `fail2ban_ignoreip` | [127.0.0.1/8] | IP которые не банить |
+| `fail2ban_email_enabled` | false | Email-уведомления о банах |
 
-### Настройки автообновлений
+### Автообновления
 
 | Переменная | По умолчанию | Описание |
-|------------|--------------|----------|
+|---|---|---|
 | `auto_update_weekday` | 3 | День недели (0=вс, 3=ср) |
 | `auto_update_hour` | 4 | Час запуска |
-| `auto_update_minute` | 0 | Минута запуска |
-| `auto_update_reboot` | true | Автоперезагрузка если нужна |
+| `auto_update_reboot` | true | Автоперезагрузка |
 | `auto_update_reboot_time` | 04:30 | Время перезагрузки |
 | `auto_update_blacklist` | [] | Пакеты НЕ обновлять |
 
-### Настройки tmux
+### tmux
 
 | Переменная | По умолчанию | Описание |
-|------------|--------------|----------|
-| `tmux_mouse` | true | Включить поддержку мыши (выделение, скролл, ресайз панелей) |
-| `tmux_history_limit` | 10000 | Размер буфера прокрутки (строк) |
+|---|---|---|
+| `tmux_mouse` | true | Поддержка мыши |
+| `tmux_history_limit` | 10000 | Буфер прокрутки (строк) |
 | `tmux_base_index` | 1 | Нумерация окон с 1 |
-| `tmux_pane_base_index` | 1 | Нумерация панелей с 1 |
-| `tmux_renumber_windows` | true | Перенумеровывать окна при закрытии |
-| `tmux_escape_time` | 0 | Задержка после Escape (мс) |
-| `tmux_default_terminal` | screen-256color | Тип терминала |
-| `tmux_status_position` | bottom | Позиция статус-бара |
-| `tmux_configure_root` | true | Настроить tmux и для root |
+| `tmux_configure_root` | true | Настроить и для root |
 
-### Настройки уведомлений
+### Уведомления
 
 | Переменная | По умолчанию | Описание |
-|------------|--------------|----------|
+|---|---|---|
 | `smtp_host` | smtp.gmail.com | SMTP сервер |
 | `smtp_port` | 587 | SMTP порт |
 | `smtp_email` | — | Email отправителя (из vault) |
@@ -289,52 +243,42 @@ ansible-vps-setup/
 | `server_name` | MY-VPS | Имя сервера в письмах |
 | `login_notify_geoip` | true | Определять страну по IP |
 
-## Важно о безопасности
+## Важно
 
-⚠️ **Перед запуском:**
-
-1. Убедитесь, что SSH-ключ настроен
-2. Сначала протестируйте на тестовом сервере
-3. Держите запасной способ доступа (VNC/консоль провайдера)
-4. Запомните новый SSH порт для переподключения
-
-**После выполнения:**
-
-```bash
-# Подключение с новыми настройками
-ssh -p ВАШ_SSH_ПОРТ ваш_пользователь@ip_сервера
-```
+- Перед запуском убедитесь, что SSH-ключ настроен и работает
+- Сначала протестируйте с `--check --diff`
+- Держите запасной доступ (VNC/консоль провайдера) на случай блокировки
+- Запомните новый SSH-порт для переподключения
+- После первого запуска подключайтесь: `ssh -p ВАШ_ПОРТ ваш_пользователь@ip_сервера`
 
 ## Решение проблем
 
-### Потерян SSH доступ
+### Потерян SSH-доступ
 
-1. Используйте консоль/VNC вашего VPS провайдера
-2. Проверьте `/etc/ssh/sshd_config` на предмет порта
-3. Проверьте правила UFW: `ufw status`
-4. Проверьте fail2ban: `fail2ban-client status`
+1. Используйте VNC/консоль провайдера
+2. Проверьте порт: `grep Port /etc/ssh/sshd_config`
+3. Проверьте UFW: `ufw status`
+4. Проверьте fail2ban: `fail2ban-client status sshd`
 
-### Проблемы с подключением Ansible
+### Не приходят уведомления о входе
+
+1. Проверьте `UsePAM yes` в sshd: `sudo sshd -T | grep usepam`
+2. Проверьте PAM-строку: `grep login-notify /etc/pam.d/sshd`
+3. Проверьте лог скрипта: `cat /var/log/login-notify.log`
+4. Тест отправки: `echo "test" | sudo /usr/sbin/sendmail your@email.com`
+5. Проверьте лог msmtp: `cat /var/log/msmtp.log`
+
+### Ошибка sudo при Ansible
+
+Если `Incorrect sudo password` — добавьте `vault_ansible_become_pass` в vault и раскомментируйте `ansible_become_pass` в inventory. Или настройте NOPASSWD через роль `users`.
+
+Если `Timeout waiting for privilege escalation prompt` — у пользователя уже настроен NOPASSWD, уберите `ansible_become_pass` из inventory.
+
+### Подробная отладка
 
 ```bash
-# Подробный вывод
 ansible-playbook site.yml -vvv
-
-# Проверка связи
 ansible all -m ping -vvv
-```
-
-### Не приходят уведомления
-
-```bash
-# Проверить лог msmtp
-tail -f /var/log/msmtp.log
-
-# Тест отправки письма
-echo "Test" | mailx -s "Test" your@email.com
-
-# Проверить PAM
-sudo tail -f /var/log/auth.log
 ```
 
 ## Лицензия

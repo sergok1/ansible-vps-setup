@@ -1,6 +1,11 @@
 ---
 # Задачи управления пользователями
 
+- name: Создание основной группы пользователя
+  ansible.builtin.group:
+    name: "{{ admin_user }}"
+    state: present
+
 - name: Проверка существования групп админа
   ansible.builtin.group:
     name: "{{ item }}"
@@ -10,6 +15,7 @@
 - name: Создание пользователя админа
   ansible.builtin.user:
     name: "{{ admin_user }}"
+    group: "{{ admin_user }}"
     groups: "{{ admin_groups }}"
     shell: /bin/bash
     create_home: true

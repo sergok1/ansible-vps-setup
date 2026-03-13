@@ -2,6 +2,9 @@
 # Скрипт уведомлений о входе в систему
 # Управляется Ansible - НЕ РЕДАКТИРОВАТЬ ВРУЧНУЮ
 
+LOGFILE="/var/log/login-notify.log"
+echo "$(date) PAM_TYPE=$PAM_TYPE PAM_USER=$PAM_USER PAM_RHOST=$PAM_RHOST PAM_SERVICE=$PAM_SERVICE" >> "$LOGFILE" 2>/dev/null
+
 # === НАСТРОЙКИ ===
 EMAIL="{{ notify_email }}"
 SERVER_NAME="{{ server_name }}"
@@ -90,6 +93,12 @@ System Status:
 ═══════════════════════════════════════"
 
 # Отправка в фоне чтобы не задерживать вход
-echo "$MESSAGE" | /usr/bin/mailx -s "$SUBJECT" "$EMAIL" &
+{
+  echo "From: {{ smtp_email }}"
+  echo "To: $EMAIL"
+  echo "Subject: $SUBJECT"
+  echo ""
+  echo "$MESSAGE"
+} | /usr/sbin/sendmail -t &
 
 exit 0

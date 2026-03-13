@@ -11,13 +11,28 @@
     update_cache: true
     cache_valid_time: 3600
 
+- name: Создание группы msmtp
+  ansible.builtin.group:
+    name: msmtp
+    system: true
+    state: present
+
+- name: Добавление пользователей в группу msmtp
+  ansible.builtin.user:
+    name: "{{ item }}"
+    groups: msmtp
+    append: true
+  loop:
+    - "{{ admin_user }}"
+    - root
+
 - name: Создание конфигурации msmtp
   ansible.builtin.template:
     src: msmtprc.j2
     dest: /etc/msmtprc
     owner: root
-    group: root
-    mode: '0600'
+    group: msmtp
+    mode: '0640'
   notify: Проверка конфигурации msmtp
 
 - name: Создание лог-файла msmtp

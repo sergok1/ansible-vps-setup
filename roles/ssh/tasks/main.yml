@@ -27,6 +27,7 @@
     - { regexp: '^#?X11Forwarding\s', line: 'X11Forwarding no' }
     - { regexp: '^#?AllowAgentForwarding\s', line: 'AllowAgentForwarding no' }
     - { regexp: '^#?PermitEmptyPasswords\s', line: 'PermitEmptyPasswords no' }
+    - { regexp: '^#?UsePAM\s', line: 'UsePAM yes' }
   notify: Перезапуск sshd
 
 - name: Ограничение SSH доступа определёнными пользователями

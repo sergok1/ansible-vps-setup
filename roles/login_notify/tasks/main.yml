@@ -19,19 +19,25 @@
     group: root
     mode: '0755'
 
-- name: Проверка наличия строки PAM в common-session
+- name: Создание лог-файла для отладки уведомлений
+  ansible.builtin.file:
+    path: /var/log/login-notify.log
+    state: touch
+    owner: root
+    group: root
+    mode: '0666'
+    modification_time: preserve
+    access_time: preserve
+
+- name: Удаление старого PAM hook из common-session
   ansible.builtin.lineinfile:
     path: /etc/pam.d/common-session
     regexp: 'pam_exec.so.*login-notify.sh'
     state: absent
-  check_mode: true
-  register: pam_check
-  changed_when: false
 
-- name: Добавление PAM hook для уведомлений
+- name: Настройка PAM hook в sshd
   ansible.builtin.lineinfile:
-    path: /etc/pam.d/common-session
-    line: "session optional pam_exec.so seteuid /usr/local/bin/login-notify.sh"
-    insertafter: EOF
+    path: /etc/pam.d/sshd
+    regexp: 'pam_exec.so.*login-notify.sh'
+    line: "session optional pam_exec.so /usr/local/bin/login-notify.sh"
     state: present
-  when: pam_check.found == 0
