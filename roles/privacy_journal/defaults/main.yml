@@ -1,0 +1,17 @@
+---
+# Переменные по умолчанию для роли privacy_journal
+
+# Хранение логов: volatile (RAM) или persistent (диск)
+journal_storage: "volatile"
+
+# Максимальный размер логов в RAM
+journal_runtime_max_use: "50M"
+
+# Максимальный размер одного файла
+journal_runtime_max_file_size: "10M"
+
+# Время хранения логов (в RAM — до перезагрузки, но можно ограничить)
+journal_max_retention: "1day"
+
+# Удалить старые логи с диска при переключении на volatile
+journal_cleanup_persistent: true

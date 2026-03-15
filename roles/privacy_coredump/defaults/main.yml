@@ -1,0 +1,11 @@
+---
+# Переменные по умолчанию для роли privacy_coredump
+
+# Хранение дампов: none (отключить) или journal (в journald)
+coredump_storage: "none"
+
+# Максимальный размер дампа (0 = не сохранять)
+coredump_max_size: 0
+
+# Лимит core в ulimits (0 = запретить)
+coredump_ulimit: 0

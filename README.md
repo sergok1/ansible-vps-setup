@@ -132,6 +132,51 @@ ansible-playbook site.yml --tags notifications --ask-vault-pass
 ansible-playbook site.yml --tags all,notifications --ask-vault-pass
 ```
 
+## Шифрованный swap
+
+Роль `encrypted_swap` по умолчанию **не запускается**. Создаёт swap-файл, шифрует его через `dm-crypt` с ключом из `/dev/urandom` — данные не переживают перезагрузку.
+
+### 1. Включить в main.yml
+
+```yaml
+encrypted_swap_enabled: true
+encrypted_swap_size: "512M"   # или "1G"
+```
+
+### 2. Запустить
+
+```bash
+ansible-playbook site.yml --tags swap --ask-vault-pass
+
+# Или вместе со всем
+ansible-playbook site.yml --tags all,swap --ask-vault-pass
+```
+
+## Приватность (логи и core dumps)
+
+Роли `privacy_journal` и `privacy_coredump` по умолчанию **не запускаются**.
+
+- **privacy_journal** — переводит systemd-journal в volatile (RAM). Логи живут только в оперативной памяти, после перезагрузки стираются. На диске не остаётся следов SSH-подключений, IP-адресов клиентов и т.д.
+- **privacy_coredump** — отключает дампы памяти. При падении программы её память не сбрасывается на диск.
+
+### 1. Включить в main.yml
+
+```yaml
+privacy_journal_enabled: true
+privacy_coredump_enabled: true
+```
+
+### 2. Запустить
+
+```bash
+# Обе роли
+ansible-playbook site.yml --tags privacy --ask-vault-pass
+
+# По отдельности
+ansible-playbook site.yml --tags privacy_journal --ask-vault-pass
+ansible-playbook site.yml --tags privacy_coredump --ask-vault-pass
+```
+
 ## Запуск отдельных ролей
 
 ```bash
@@ -142,6 +187,10 @@ ansible-playbook site.yml --tags ufw           # Файрвол
 ansible-playbook site.yml --tags fail2ban      # Fail2ban
 ansible-playbook site.yml --tags auto_update   # Автообновления
 ansible-playbook site.yml --tags tmux          # tmux
+ansible-playbook site.yml --tags swap          # Шифрованный swap
+ansible-playbook site.yml --tags privacy       # Логи в RAM + отключение core dumps
+ansible-playbook site.yml --tags privacy_journal  # Только логи в RAM
+ansible-playbook site.yml --tags privacy_coredump # Только отключение core dumps
 
 # Группы ролей
 ansible-playbook site.yml --tags security      # SSH + UFW + fail2ban
@@ -178,6 +227,9 @@ ansible-vps-setup/
     ├── fail2ban/            # Защита от brute force
     ├── auto_update/         # Автообновления по расписанию
     ├── tmux/                # tmux с мышью и скроллом
+    ├── encrypted_swap/      # Шифрованный swap (dm-crypt)
+    ├── privacy_journal/     # Логи в RAM (volatile)
+    ├── privacy_coredump/    # Отключение core dumps
     ├── msmtp/               # Отправка почты через SMTP
     └── login_notify/        # PAM-уведомления о SSH-входе
 ```
@@ -230,6 +282,35 @@ ansible-vps-setup/
 | `tmux_history_limit` | 10000 | Буфер прокрутки (строк) |
 | `tmux_base_index` | 1 | Нумерация окон с 1 |
 | `tmux_configure_root` | true | Настроить и для root |
+
+### Шифрованный swap
+
+| Переменная | По умолчанию | Описание |
+|---|---|---|
+| `encrypted_swap_enabled` | false | Включить роль |
+| `encrypted_swap_size` | 512M | Размер swap-файла |
+| `encrypted_swap_file` | /swapcrypt.img | Путь к файлу |
+| `encrypted_swap_cipher` | aes-xts-plain64 | Алгоритм шифрования |
+| `encrypted_swap_key_size` | 256 | Размер ключа (бит) |
+
+### Приватность: логи
+
+| Переменная | По умолчанию | Описание |
+|---|---|---|
+| `privacy_journal_enabled` | false | Включить роль |
+| `journal_storage` | volatile | Хранение: volatile (RAM) или persistent (диск) |
+| `journal_runtime_max_use` | 50M | Макс. размер логов в RAM |
+| `journal_max_retention` | 1day | Время хранения |
+| `journal_cleanup_persistent` | true | Удалить старые логи с диска |
+
+### Приватность: core dumps
+
+| Переменная | По умолчанию | Описание |
+|---|---|---|
+| `privacy_coredump_enabled` | false | Включить роль |
+| `coredump_storage` | none | Хранение: none (отключить) или journal |
+| `coredump_max_size` | 0 | Макс. размер дампа (0 = не сохранять) |
+| `coredump_ulimit` | 0 | Лимит core в ulimits (0 = запретить) |
 
 ### Уведомления
 

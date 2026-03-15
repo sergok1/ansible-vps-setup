@@ -1,0 +1,44 @@
+---
+# Отключение core dumps — при падении программы память не сбрасывается на диск
+
+- name: Настройка systemd-coredump
+  ansible.builtin.template:
+    src: coredump.conf.j2
+    dest: /etc/systemd/coredump.conf
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Отключение core dumps через limits.conf
+  ansible.builtin.lineinfile:
+    path: /etc/security/limits.conf
+    regexp: '^\*\s+(soft|hard)\s+core'
+    line: "{{ item }}"
+    state: present
+  loop:
+    - "* soft core {{ coredump_ulimit }}"
+    - "* hard core {{ coredump_ulimit }}"
+
+- name: Отключение core dumps через sysctl
+  ansible.builtin.sysctl:
+    name: kernel.core_pattern
+    value: "|/bin/false"
+    sysctl_set: true
+    state: present
+    reload: true
+  when: coredump_storage == "none"
+
+- name: Удаление старых core dumps
+  ansible.builtin.file:
+    path: /var/lib/systemd/coredump
+    state: absent
+  when: coredump_storage == "none"
+
+- name: Создание пустой директории coredump
+  ansible.builtin.file:
+    path: /var/lib/systemd/coredump
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  when: coredump_storage == "none"

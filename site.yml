@@ -42,6 +42,19 @@
     - role: users
       tags: [users]
 
+    - role: encrypted_swap
+      tags: [swap, base, never]
+      when: encrypted_swap_enabled | default(false)
+
+    # === Приватность (опционально) ===
+    - role: privacy_journal
+      tags: [privacy_journal, privacy, never]
+      when: privacy_journal_enabled | default(false)
+
+    - role: privacy_coredump
+      tags: [privacy_coredump, privacy, never]
+      when: privacy_coredump_enabled | default(false)
+
     # === Безопасность ===
     # UFW перед SSH: порт должен быть открыт до рестарта sshd
     - role: ufw

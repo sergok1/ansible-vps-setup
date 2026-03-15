@@ -1,0 +1,15 @@
+---
+# Переменные по умолчанию для роли encrypted_swap
+
+# Размер swap-файла
+encrypted_swap_size: "512M"
+
+# Путь к swap-файлу
+encrypted_swap_file: "/swapcrypt.img"
+
+# Имя dm-crypt маппера
+encrypted_swap_name: "cryptswap"
+
+# Параметры шифрования
+encrypted_swap_cipher: "aes-xts-plain64"
+encrypted_swap_key_size: "256"

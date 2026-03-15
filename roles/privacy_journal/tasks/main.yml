@@ -1,0 +1,34 @@
+---
+# Настройка journald для хранения логов в RAM (volatile)
+# После перезагрузки логи стираются — на диске не остаётся следов
+
+- name: Настройка journald
+  ansible.builtin.template:
+    src: journald.conf.j2
+    dest: /etc/systemd/journald.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Перезапуск journald
+
+- name: Удаление старых логов с диска
+  ansible.builtin.file:
+    path: /var/log/journal
+    state: absent
+  when: journal_storage == "volatile" and journal_cleanup_persistent
+
+- name: Очистка текстовых логов syslog/auth
+  ansible.builtin.shell: |
+    for f in /var/log/syslog* /var/log/auth.log* /var/log/kern.log* /var/log/daemon.log* /var/log/messages*; do
+      [ -f "$f" ] && : > "$f"
+    done
+  changed_when: false
+  when: journal_storage == "volatile" and journal_cleanup_persistent
+
+- name: Отключение rsyslog (логи только через journald)
+  ansible.builtin.systemd:
+    name: rsyslog
+    state: stopped
+    enabled: false
+  failed_when: false
+  when: journal_storage == "volatile"

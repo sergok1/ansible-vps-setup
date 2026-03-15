@@ -1,0 +1,7 @@
+# Конфигурация systemd-coredump
+# Управляется Ansible - НЕ РЕДАКТИРОВАТЬ ВРУЧНУЮ
+
+[Coredump]
+Storage={{ coredump_storage }}
+ProcessSizeMax={{ coredump_max_size }}
+ExternalSizeMax={{ coredump_max_size }}

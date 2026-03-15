@@ -6,6 +6,9 @@ ufw_default_outgoing_policy: "allow"     # Политика исходящих: 
 
 ufw_reset: false                         # Сбросить UFW перед настройкой
 
+# IPv6 поддержка (yes/no)
+ufw_ipv6: "no"
+
 # Rate limiting для SSH (защита от brute force)
 ufw_rate_limit_ssh: true
 

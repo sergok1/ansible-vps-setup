@@ -1,0 +1,11 @@
+# Конфигурация systemd-journald
+# Управляется Ansible - НЕ РЕДАКТИРОВАТЬ ВРУЧНУЮ
+
+[Journal]
+Storage={{ journal_storage }}
+RuntimeMaxUse={{ journal_runtime_max_use }}
+RuntimeMaxFileSize={{ journal_runtime_max_file_size }}
+MaxRetentionSec={{ journal_max_retention }}
+ForwardToSyslog=no
+ForwardToConsole=no
+Compress=yes

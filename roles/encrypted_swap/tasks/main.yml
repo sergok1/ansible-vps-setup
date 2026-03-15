@@ -1,0 +1,66 @@
+---
+# Настройка шифрованного swap
+# Ключ генерируется из /dev/urandom при каждой загрузке — данные не переживают ребут
+
+- name: Установка cryptsetup
+  ansible.builtin.apt:
+    name: cryptsetup
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Проверка существования swap-файла
+  ansible.builtin.stat:
+    path: "{{ encrypted_swap_file }}"
+  register: swap_file
+
+- name: Создание swap-файла
+  ansible.builtin.command:
+    cmd: "fallocate -l {{ encrypted_swap_size }} {{ encrypted_swap_file }}"
+  when: not swap_file.stat.exists
+  changed_when: true
+
+- name: Установка прав на swap-файл
+  ansible.builtin.file:
+    path: "{{ encrypted_swap_file }}"
+    owner: root
+    group: root
+    mode: '0600'
+
+- name: Настройка crypttab
+  ansible.builtin.lineinfile:
+    path: /etc/crypttab
+    regexp: '^{{ encrypted_swap_name }}\s'
+    line: "{{ encrypted_swap_name }} {{ encrypted_swap_file }} /dev/urandom swap,cipher={{ encrypted_swap_cipher }},size={{ encrypted_swap_key_size }},loop"
+    create: true
+    mode: '0644'
+    state: present
+
+- name: Настройка fstab для шифрованного swap
+  ansible.builtin.lineinfile:
+    path: /etc/fstab
+    regexp: '/dev/mapper/{{ encrypted_swap_name }}\s'
+    line: "/dev/mapper/{{ encrypted_swap_name }} none swap sw 0 0"
+    state: present
+
+- name: Удаление старых записей swap из fstab
+  ansible.builtin.lineinfile:
+    path: /etc/fstab
+    regexp: '^(?!/dev/mapper).*\sswap\s'
+    state: absent
+
+- name: Создание systemd unit для шифрованного swap
+  ansible.builtin.template:
+    src: encrypted-swap.service.j2
+    dest: /etc/systemd/system/encrypted-swap.service
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Перезагрузка systemd
+
+- name: Включение и запуск encrypted-swap
+  ansible.builtin.systemd:
+    name: encrypted-swap.service
+    enabled: true
+    state: started
+    daemon_reload: true

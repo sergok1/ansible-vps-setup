@@ -1,0 +1,4 @@
+---
+- name: Перезагрузка UFW
+  community.general.ufw:
+    state: reloaded

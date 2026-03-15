@@ -1,0 +1,22 @@
+[Unit]
+Description=Encrypted swap on {{ encrypted_swap_file }}
+After=local-fs.target
+Before=swap.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/bin/bash -c '\
+  /sbin/losetup -fP {{ encrypted_swap_file }} && \
+  LOOP=$(/sbin/losetup -j {{ encrypted_swap_file }} | cut -d: -f1) && \
+  /sbin/cryptsetup open --type plain --cipher {{ encrypted_swap_cipher }} --key-size {{ encrypted_swap_key_size }} --key-file /dev/urandom $LOOP {{ encrypted_swap_name }} && \
+  /sbin/mkswap /dev/mapper/{{ encrypted_swap_name }} && \
+  /sbin/swapon /dev/mapper/{{ encrypted_swap_name }}'
+ExecStop=/bin/bash -c '\
+  /sbin/swapoff /dev/mapper/{{ encrypted_swap_name }} || true && \
+  /sbin/cryptsetup close {{ encrypted_swap_name }} || true && \
+  LOOP=$(/sbin/losetup -j {{ encrypted_swap_file }} | cut -d: -f1) && \
+  /sbin/losetup -d $LOOP || true'
+
+[Install]
+WantedBy=swap.target

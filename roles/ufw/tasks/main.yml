@@ -8,6 +8,13 @@
     update_cache: true
     cache_valid_time: 3600
 
+- name: "Настройка IPv6: {{ ufw_ipv6 }}"
+  ansible.builtin.lineinfile:
+    path: /etc/default/ufw
+    regexp: '^IPV6='
+    line: "IPV6={{ ufw_ipv6 }}"
+  notify: Перезагрузка UFW
+
 - name: Сброс UFW к настройкам по умолчанию
   community.general.ufw:
     state: reset
